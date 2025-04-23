@@ -44,6 +44,25 @@
                 Console.WriteLine("Invalid username or password.");
             }
         }
+        // process account creation requests
+        public static void ProcessAccountCreationRequests()
+        {
+            while (createAccountRequests.Count > 0)
+            {
+                string accountDetails = createAccountRequests.Dequeue();
+                string[] details = accountDetails.Split('|');
+                string name = details[0];
+                string password = details[1];
+                string accountNumber = details[2];
+                double balance = double.Parse(details[3]);
 
+                names.Add(name);
+                passwords.Add(password);
+                accountNumbers.Add(accountNumber);
+                balances.Add(balance);
+
+                Console.WriteLine($"Account created for {name} with account number {accountNumber} and balance {balance}");
+            }
+        }
     }
 }
