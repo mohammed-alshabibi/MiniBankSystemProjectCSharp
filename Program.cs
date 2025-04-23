@@ -15,7 +15,7 @@
         //Function to create user account
         public static void CreateAccount()
         {
-            Console.WriteLine("Enter your name:");
+            Console.WriteLine("Enter your uesr name:");
             string name = Console.ReadLine();
             Console.WriteLine("Enter your password:");
             string password = Console.ReadLine();
@@ -27,7 +27,23 @@
             createAccountRequests.Enqueue(accountDetails);
             Console.WriteLine("Account creation request sent to admin.");
         }
-
+        // Function Log in user 
+        public static void LogIn()
+        {
+            Console.WriteLine("Enter your user name:");
+            string name = Console.ReadLine();
+            Console.WriteLine("Enter your password:");
+            string password = Console.ReadLine();
+            if (names.Contains(name) && passwords.Contains(password))
+            {
+                int index = names.IndexOf(name);
+                Console.WriteLine($"Welcome {name}, your account number is {accountNumbers[index]} and your balance is {balances[index]}");
+            }
+            else
+            {
+                Console.WriteLine("Invalid username or password.");
+            }
+        }
 
     }
 }
