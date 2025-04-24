@@ -11,7 +11,7 @@ namespace MiniBankSystemProject
         static List<double> balances = new List<double>();
         static Queue<string> createAccountRequests = new Queue<string>();
         static int lastAccountNumber;
-
+        static double initialBalance;
         static void Main(string[] args)
         {
 
@@ -125,6 +125,101 @@ namespace MiniBankSystemProject
             }
 
         }
+        // request to create bank account that enter bank account initial balance and link bank account with national id that enter user in create user account
+        public static void RequestCreateBankAccount()
+        {
+            Console.Write("Enter your name with national ID: ");
+            string UserNationalId = Console.ReadLine();
+            Console.Write("Enter your initial balance: ");
+            if (!double.TryParse(Console.ReadLine(), out initialBalance))
+            {
+                Console.WriteLine("Invalid balance, please try again.");
+                return;
+            }
+            string request = UserNationalId + "|" + initialBalance.ToString();
+            createAccountRequests.Enqueue(request);
+            Console.WriteLine("Request to create bank account has been submitted.");
+        }
+        // proccess request to create bank account that check if user name with national id exist in user name list 
+        public static void ProcessCreateBankAccountRequest()
+        {
+            if (createAccountRequests.Count == 0)
+            {
+                Console.WriteLine("No requests to process.");
+                return;
+            }
+            string request = createAccountRequests.Dequeue();
+            string[] requestParts = request.Split('|');
+            string UserNationalId = requestParts[0];
+            double initialBalance = double.Parse(requestParts[1]);
+            if (UserNames.Contains(UserNationalId))
+            {
+                lastAccountNumber++;
+                accountNumbers.Add(lastAccountNumber.ToString());
+                balances.Add(initialBalance);
+                Console.WriteLine($"Bank account created successfully! Your account number is {lastAccountNumber}.");
+            }
+            else
+            {
+                Console.WriteLine("User does not exist, cannot create bank account.");
+            }
+        }
+        //deposit money to bank account first check if user name with national id exist in user name list and then check if account number exist in account number list and then check if admin accepted the request to create bank account
+        public static void DepositMoney()
+        {
+            Console.Write("Enter your name with national ID: ");
+            string UserNationalId = Console.ReadLine();
+            Console.Write("Enter your account number: ");
+            string accountNumber = Console.ReadLine();
+            Console.Write("Enter the amount to deposit: ");
+            if (!double.TryParse(Console.ReadLine(), out double depositAmount))
+            {
+                Console.WriteLine("Invalid amount, please try again.");
+                return;
+            }
+            if (UserNames.Contains(UserNationalId) && accountNumbers.Contains(accountNumber))
+            {
+                int index = accountNumbers.IndexOf(accountNumber);
+                balances[index] += depositAmount;
+                Console.WriteLine($"Deposit successful! Your new balance is {balances[index]}.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid user or account number, please try again.");
+            }
+        }
+        // withdraw money from bank account first check if user name with national id exist in user name list and then check if account number exist in account number list and then check if admin accepted the request to create bank account
+        public static void WithdrawMoney()
+        {
+            Console.Write("Enter your name with national ID: ");
+            string UserNationalId = Console.ReadLine();
+            Console.Write("Enter your account number: ");
+            string accountNumber = Console.ReadLine();
+            Console.Write("Enter the amount to withdraw: ");
+            if (!double.TryParse(Console.ReadLine(), out double withdrawAmount))
+            {
+                Console.WriteLine("Invalid amount, please try again.");
+                return;
+            }
+            if (UserNames.Contains(UserNationalId) && accountNumbers.Contains(accountNumber))
+            {
+                int index = accountNumbers.IndexOf(accountNumber);
+                if (balances[index] >= withdrawAmount)
+                {
+                    balances[index] -= withdrawAmount;
+                    Console.WriteLine($"Withdrawal successful! Your new balance is {balances[index]}.");
+                }
+                else
+                {
+                    Console.WriteLine("Insufficient funds, please try again.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid user or account number, please try again.");
+            }
+        }
+        
 
     }
 
