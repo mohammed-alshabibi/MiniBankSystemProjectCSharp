@@ -104,6 +104,7 @@ namespace MiniBankSystemProject
             balances.Add(0.0);
             Console.WriteLine($"Admin account created successfully! Your account number is {lastAccountNumber}.");
         }
+
         // login admin account that enter Admin+national id and password and check if admin or normal user
         public static void LoginAdminAccount()
         {
