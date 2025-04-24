@@ -1,68 +1,128 @@
-﻿namespace MiniBankSystemProject
+﻿using System;
+
+namespace MiniBankSystemProject
 {
     internal class Program
     {
         const string UserLogInFile = "login.txt";
-        static List<string> names = new List<string>();
+        static List<string> UserNames = new List<string>();
         static List<string> passwords = new List<string>();
         static List<string> accountNumbers = new List<string>();
         static List<double> balances = new List<double>();
         static Queue<string> createAccountRequests = new Queue<string>();
+        static int lastAccountNumber;
+
         static void Main(string[] args)
         {
-            
+
         }
-        //Function to create user account
-        public static void CreateAccount()
+        // welcome menu 
+        public static void WelcomeMenu()
         {
-            Console.WriteLine("Enter your uesr name:");
-            string name = Console.ReadLine();
-            Console.WriteLine("Enter your password:");
-            string password = Console.ReadLine();
-            Console.WriteLine("Enter your account number:");
-            string accountNumber = Console.ReadLine();
-            Console.WriteLine("Enter your balance:");
-            double balance =double.Parse( Console.ReadLine());
-            string accountDetails = name+"|"+password + "|" + accountNumber + "|" + balance;
-            createAccountRequests.Enqueue(accountDetails);
-            Console.WriteLine("Account creation request sent to admin.");
-        }
-        // Function Log in user 
-        public static void LogIn()
-        {
-            Console.WriteLine("Enter your user name:");
-            string name = Console.ReadLine();
-            Console.WriteLine("Enter your password:");
-            string password = Console.ReadLine();
-            if (names.Contains(name) && passwords.Contains(password))
+            Console.WriteLine("Welcome to the Mini Bank System");
+            Console.WriteLine("1.Admin");
+            Console.WriteLine("2.User");
+            Console.WriteLine("3. Exit");
+            Console.Write("Please select an option: ");
+            string choice = Console.ReadLine();
+            switch (choice)
             {
-                int index = names.IndexOf(name);
-                Console.WriteLine($"Welcome {name}, your account number is {accountNumbers[index]} and your balance is {balances[index]}");
+                case "1":
+                    //AdminMenu();
+                    break;
+                case "2":
+                    //UserMenu();
+                    break;
+                case "3":
+                    Environment.Exit(0);
+                    break;
+                default:
+                    Console.WriteLine("Invalid choice, please try again.");
+                    WelcomeMenu();
+                    break;
+            }
+        }
+        //create user account that enter user name with national id and password
+        public static void CreateUserAccount()
+        {
+            Console.Write("Enter your name: ");
+            string name = Console.ReadLine();
+            Console.Write("Enter your national ID: ");
+            string nationalId = Console.ReadLine();
+            Console.Write("Enter your password: ");
+            string password = Console.ReadLine();
+            if (UserNames.Contains(name))
+            {
+                Console.WriteLine("User already exists.");
+                return;
+            }
+            UserNames.Add(name + nationalId);
+            passwords.Add(password);
+            lastAccountNumber++;
+            accountNumbers.Add(lastAccountNumber.ToString());
+            balances.Add(0.0);
+            Console.WriteLine($"Account created successfully! Your account number is {lastAccountNumber}.");
+        }
+        // login user account that enter user name with national id and password
+        public static void LoginUserAccount()
+        {
+            Console.Write("Enter your name with national ID: ");
+            string name = Console.ReadLine();
+            string nationalId = Console.ReadLine();
+            Console.Write("Enter your password: ");
+            string password = Console.ReadLine();
+            string userId = name + nationalId;
+            if (UserNames.Contains(userId) && passwords[UserNames.IndexOf(userId)] == password)
+            {
+                Console.WriteLine("Login successful!");
+                // UserMenu();
             }
             else
             {
-                Console.WriteLine("Invalid username or password.");
+                Console.WriteLine("Invalid credentials, please try again.");
+                LoginUserAccount();
             }
         }
-        // process account creation requests
-        public static void ProcessAccountCreationRequests()
+        // create admin account that enter user name with national id and password
+        public static void CreateAdminAccount()
         {
-            while (createAccountRequests.Count > 0)
+            Console.Write("Enter your national ID: ");
+            string nationalId = Console.ReadLine();
+            Console.Write("Enter your password: ");
+            string password = Console.ReadLine();
+            string AdminId = "Admin" + nationalId;
+            if (UserNames.Contains(AdminId))
             {
-                string accountDetails = createAccountRequests.Dequeue();
-                string[] details = accountDetails.Split('|');
-                string name = details[0];
-                string password = details[1];
-                string accountNumber = details[2];
-                double balance = double.Parse(details[3]);
-
-                names.Add(name);
-                passwords.Add(password);
-                accountNumbers.Add(accountNumber);
-                balances.Add(balance);
-
-                Console.WriteLine($"Account created for {name} with account number {accountNumber} and balance {balance}");
+                Console.WriteLine("Admin already exists.");
+                return;
+            }
+            UserNames.Add(AdminId);
+            passwords.Add(password);
+            lastAccountNumber++;
+            accountNumbers.Add(lastAccountNumber.ToString());
+            balances.Add(0.0);
+            Console.WriteLine($"Admin account created successfully! Your account number is {lastAccountNumber}.");
+        }
+        // login admin account that enter Admin+national id and password and check if admin or normal user
+        public static void LoginAdminAccount()
+        {
+            Console.Write("Enter your national ID: ");
+            string nationalId = Console.ReadLine();
+            Console.Write("Enter your password: ");
+            string password = Console.ReadLine();
+            string AdminId = "Admin" + nationalId;
+            if (UserNames.Contains(AdminId) && passwords[UserNames.IndexOf(AdminId)] == password)
+            {
+                Console.WriteLine("Login successful!");
+                // AdminMenu();
+            }
+            else
+            {
+                Console.WriteLine("Invalid credentials, please try again.");
+                LoginAdminAccount();
             }
         }
+
     }
+
 }
