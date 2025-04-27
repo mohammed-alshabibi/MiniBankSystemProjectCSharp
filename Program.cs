@@ -60,7 +60,8 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in Welcome Menu: {ex.Message}");
             }
-            
+            Console.WriteLine("Please press any key to countine");
+            Console.ReadKey();
 
         }
         // Display the admin menu and prompt user for selection
@@ -102,7 +103,7 @@ namespace MiniBankSystemProject
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in Admin Menu: {ex.Message}");
+                Console.WriteLine($"Error in Admin Mlenu: {ex.Message}");
             }
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
@@ -118,7 +119,7 @@ namespace MiniBankSystemProject
                 bool flag = true;
                 while (flag)
                 {
-                    
+                    Console.Clear();
                     Console.WriteLine("\n--- User Menu ---");
                     Console.WriteLine("1. Create Account Request");
                     Console.WriteLine("2. Login");
@@ -145,8 +146,9 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in User Menu: {ex.Message}");
             }
-           
-            }
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+        }
         // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
         {
@@ -158,6 +160,9 @@ namespace MiniBankSystemProject
             balances.Add(balance);
             accountNumbers.Add(lastAccountNumber.ToString());
             Console.WriteLine($"Account created! Account Number: {lastAccountNumber}");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            UserMenu();
         }
         // Request to create a new bank account
         public static void RequestCreateBankAccount()
@@ -310,6 +315,9 @@ namespace MiniBankSystemProject
                 Console.WriteLine($"Account: {accountNumbers[index]}, Balance: {balances[index]:C}");
             else
                 Console.WriteLine("Account not found.");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            AdminMenu();
         }
         // Delete an account
         public static void DeleteAccount()
@@ -328,6 +336,9 @@ namespace MiniBankSystemProject
             }
             else
                 Console.WriteLine("Account not found.");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            AdminMenu();
         }
         // View all accounts
         public static void ViewAllAccounts()
@@ -353,6 +364,9 @@ namespace MiniBankSystemProject
                     sw.WriteLine($"{accountNumbers[i]},{names[i]},{nationalIds[i]},{balances[i]}");
             }
             Console.WriteLine("Exported successfully.");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            AdminMenu();
         }
         // Submit a complaint
         public static void SubmitComplaint()
@@ -360,6 +374,9 @@ namespace MiniBankSystemProject
             Console.Write("Enter complaint: ");
             complaints.Push(Console.ReadLine());
             Console.WriteLine("Complaint submitted.");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            UserMenu();
         }
         // Undo the last complaint
         public static void UndoLastComplaint()
@@ -371,6 +388,9 @@ namespace MiniBankSystemProject
             }
             else
                 Console.WriteLine("No complaints to undo.");
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            UserMenu();
         }
         // Print a receipt for transactions
         public static void PrintReceipt(string type, int index, double amount)
@@ -470,6 +490,9 @@ namespace MiniBankSystemProject
                 if (complaints.Count == 0)
                 {
                     Console.WriteLine("No complaints available.");
+                    Console.WriteLine("Please press any key to countune");
+                    Console.ReadKey();
+                    AdminMenu();
                 }
                 else
                 {
@@ -493,6 +516,9 @@ namespace MiniBankSystemProject
             if (transferHistory.Count == 0)
             {
                 Console.WriteLine("No transfer history available.");
+                Console.WriteLine("Please press any key to countune");
+                Console.ReadKey();
+                UserMenu();
             }
             else
             {
