@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+
 
 namespace MiniBankSystemProject
 {
@@ -61,65 +61,81 @@ namespace MiniBankSystemProject
         // Display the admin menu and prompt user for selection
         public static void AdminMenu()
         {
-            bool exit = true;
-            while (exit) 
+            try
             {
-                
-                Console.WriteLine("\n--- Admin Menu ---");
-                Console.WriteLine("1. Process Account Requests");
-                Console.WriteLine("2. Search Account by Name/National ID");
-                Console.WriteLine("3. Delete Account");
-                Console.WriteLine("4. View All Accounts");
-                Console.WriteLine("5. Show Total Bank Balance");
-                Console.WriteLine("6. Export All Accounts");
-                Console.WriteLine("7. View All Complaints");
-                Console.WriteLine("8. Back to Main Menu");
-                Console.Write("Select an option: ");
-                string choice = Console.ReadLine();
-
-                switch (choice)
+                bool exit = true;
+                while (exit)
                 {
-                    case "1": ProcessCreateBankAccountRequest(); break;
-                    case "2": SearchAccount(); break;
-                    case "3": DeleteAccount(); break;
-                    case "4": ViewAllAccounts(); break;
-                    case "5": ShowTotalBankBalance(); break;
-                    case "6": ExportAccounts(); break;
-                    case "7": ViewAllComplaints(); break;
-                    case "8": WelcomeMenu(); break;
-                    default: Console.WriteLine("Invalid choice."); AdminMenu();exit = false; break;
+
+                    Console.WriteLine("\n--- Admin Menu ---");
+                    Console.WriteLine("1. Process Account Requests");
+                    Console.WriteLine("2. Search Account by Name/National ID");
+                    Console.WriteLine("3. Delete Account");
+                    Console.WriteLine("4. View All Accounts");
+                    Console.WriteLine("5. Show Total Bank Balance");
+                    Console.WriteLine("6. Export All Accounts");
+                    Console.WriteLine("7. View All Complaints");
+                    Console.WriteLine("8. Back to Main Menu");
+                    Console.Write("Select an option: ");
+                    string choice = Console.ReadLine();
+
+                    switch (choice)
+                    {
+                        case "1": ProcessCreateBankAccountRequest(); break;
+                        case "2": SearchAccount(); break;
+                        case "3": DeleteAccount(); break;
+                        case "4": ViewAllAccounts(); break;
+                        case "5": ShowTotalBankBalance(); break;
+                        case "6": ExportAccounts(); break;
+                        case "7": ViewAllComplaints(); break;
+                        case "8": WelcomeMenu(); break;
+                        default: Console.WriteLine("Invalid choice."); AdminMenu(); exit = false; break;
+                    }
+
                 }
-              
             }
-            
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Admin Menu: {ex.Message}");
+            }
+
+
+            }
         // Display the user menu and prompt user for selection
         public static void UserMenu()
         {
-            bool flag = true;
-            while (flag)
+            try
             {
-                Console.WriteLine("\n--- User Menu ---");
-                Console.WriteLine("1. Create Account Request");
-                Console.WriteLine("2. Login");
-                Console.WriteLine("3. Submit Complaint");
-                Console.WriteLine("4. Undo Last Complaint");
-                Console.WriteLine("5. Back to Main Menu");
-                Console.Write("Select an option: ");
-                string choice = Console.ReadLine();
-
-                switch (choice)
+                bool flag = true;
+                while (flag)
                 {
-                    case "1": RequestCreateBankAccount(); break;
-                    case "2": LoginUserAccount(); break;
-                    case "3": SubmitComplaint(); break;
-                    case "4": UndoLastComplaint(); break;
-                    case "5": WelcomeMenu(); break;
-                    default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
+                    Console.WriteLine("\n--- User Menu ---");
+                    Console.WriteLine("1. Create Account Request");
+                    Console.WriteLine("2. Login");
+                    Console.WriteLine("3. Submit Complaint");
+                    Console.WriteLine("4. Undo Last Complaint");
+                    Console.WriteLine("5. Back to Main Menu");
+                    Console.Write("Select an option: ");
+                    string choice = Console.ReadLine();
+
+                    switch (choice)
+                    {
+                        case "1": RequestCreateBankAccount(); break;
+                        case "2": LoginUserAccount(); break;
+                        case "3": SubmitComplaint(); break;
+                        case "4": UndoLastComplaint(); break;
+                        case "5": WelcomeMenu(); break;
+                        default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
+                    }
                 }
             }
-           
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in User Menu: {ex.Message}");
+            }
+
+
+            }
         // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
         {
@@ -134,28 +150,36 @@ namespace MiniBankSystemProject
         // Request to create a new bank account
         public static void RequestCreateBankAccount()
         {
-            Console.Write("Enter your name: ");
-            string name = Console.ReadLine();
-            Console.Write("Enter your national ID: ");
-            string nationalId = Console.ReadLine();
-            Console.Write("Enter your password: ");
-            string password = Console.ReadLine();
-            Console.Write("Enter initial balance: ");
-
-            if (!double.TryParse(Console.ReadLine(), out double initialBalance))
+            try
             {
-                Console.WriteLine("Invalid balance.");
-                return;
-            }
-            // Check if the account already exists or if a request is pending
-            if (nationalIds.Contains(nationalId) || createAccountRequests.Any(r => r.Contains(nationalId)))
-            {
-                Console.WriteLine("Account already exists or request pending.");
-                return;
-            }
+                Console.Write("Enter your name: ");
+                string name = Console.ReadLine();
+                Console.Write("Enter your national ID: ");
+                string nationalId = Console.ReadLine();
+                Console.Write("Enter your password: ");
+                string password = Console.ReadLine();
+                Console.Write("Enter initial balance: ");
 
-            createAccountRequests.Enqueue(name + "|" + nationalId + "|" + password + "|" + initialBalance);
-            Console.WriteLine("Account request submitted!");
+                if (!double.TryParse(Console.ReadLine(), out double initialBalance))
+                {
+                    Console.WriteLine("Invalid balance.");
+                    return;
+                }
+                // Check if the account already exists or if a request is pending
+                if (nationalIds.Contains(nationalId) || createAccountRequests.Any(r => r.Contains(nationalId)))
+                {
+                    Console.WriteLine("Account already exists or request pending.");
+                    return;
+                }
+
+                createAccountRequests.Enqueue(name + "|" + nationalId + "|" + password + "|" + initialBalance);
+                Console.WriteLine("Account request submitted!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in RequestCreateBankAccount: {ex.Message}");
+
+            }
         }
         // Process the account creation request
         public static void ProcessCreateBankAccountRequest()
@@ -188,65 +212,73 @@ namespace MiniBankSystemProject
                 Console.WriteLine("Login failed.");
             }
         }
-
+        // Display the user bank menu and prompt user for selection
         public static void UserBankMenu(int index)
         {
-            Console.WriteLine($"\n--- Welcome {names[index]} ---");
-            Console.WriteLine("1. View Balance");
-            Console.WriteLine("2. Deposit");
-            Console.WriteLine("3. Withdraw");
-            Console.WriteLine("4. Transfer");
-            Console.WriteLine("5. Logout");
-            Console.Write("Select an option: ");
-            string choice = Console.ReadLine();
-
-            switch (choice)
+            try
             {
-                case "1":
-                    Console.WriteLine($"Your balance is {balances[index]:C}");
-                    break;
-                case "2":
-                    Console.Write("Enter deposit amount: ");
-                    if (double.TryParse(Console.ReadLine(), out double deposit))
-                    {
-                        balances[index] += deposit;
-                        PrintReceipt("Deposit", index, deposit);
-                    }
-                    break;
-                case "3":
-                    Console.Write("Enter withdraw amount: ");
-                    if (double.TryParse(Console.ReadLine(), out double withdraw) && balances[index] >= withdraw)
-                    {
-                        balances[index] -= withdraw;
-                        PrintReceipt("Withdraw", index, withdraw);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Insufficient funds.");
-                    }
-                    break;
-                case "4":
-                    Console.Write("Enter recipient account number: ");
-                    string recipient = Console.ReadLine();
-                    int receiverIndex = accountNumbers.IndexOf(recipient);
-                    if (receiverIndex != -1)
-                    {
-                        Console.Write("Enter amount to transfer: ");
-                        if (double.TryParse(Console.ReadLine(), out double amount) && balances[index] >= amount)
+                Console.WriteLine($"\n--- Welcome {names[index]} ---");
+                Console.WriteLine("1. View Balance");
+                Console.WriteLine("2. Deposit");
+                Console.WriteLine("3. Withdraw");
+                Console.WriteLine("4. Transfer");
+                Console.WriteLine("5. Logout");
+                Console.Write("Select an option: ");
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+
+                    case "1":
+                        Console.WriteLine($"Your balance is {balances[index]:C}");
+                        break;
+                    case "2":
+                        Console.Write("Enter deposit amount: ");
+                        if (double.TryParse(Console.ReadLine(), out double deposit))
                         {
-                            balances[index] -= amount;
-                            balances[receiverIndex] += amount;
-                            Console.WriteLine("Transfer successful.");
+                            balances[index] += deposit;
+                            PrintReceipt("Deposit", index, deposit);
+                        }
+                        break;
+                    case "3":
+                        Console.Write("Enter withdraw amount: ");
+                        if (double.TryParse(Console.ReadLine(), out double withdraw) && balances[index] >= withdraw)
+                        {
+                            balances[index] -= withdraw;
+                            PrintReceipt("Withdraw", index, withdraw);
                         }
                         else
-                            Console.WriteLine("Invalid amount or insufficient funds.");
-                    }
-                    else
-                        Console.WriteLine("Recipient not found.");
-                    break;
-                case "5": WelcomeMenu(); break;
-                default: Console.WriteLine("Invalid option."); break;
+                        {
+                            Console.WriteLine("Insufficient funds.");
+                        }
+                        break;
+                    case "4":
+                        Console.Write("Enter recipient account number: ");
+                        string recipient = Console.ReadLine();
+                        int receiverIndex = accountNumbers.IndexOf(recipient);
+                        if (receiverIndex != -1)
+                        {
+                            Console.Write("Enter amount to transfer: ");
+                            if (double.TryParse(Console.ReadLine(), out double amount) && balances[index] >= amount)
+                            {
+                                balances[index] -= amount;
+                                balances[receiverIndex] += amount;
+                                Console.WriteLine("Transfer successful.");
+                            }
+                            else
+                                Console.WriteLine("Invalid amount or insufficient funds.");
+                        }
+                        else
+                            Console.WriteLine("Recipient not found.");
+                        break;
+                    case "5": WelcomeMenu(); break;
+                    default: Console.WriteLine("Invalid option."); break;
+                }
+            }catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UserBankMenu: {ex.Message}");
             }
+
             UserBankMenu(index);
         }
         // Search for an account by national ID
@@ -376,7 +408,7 @@ namespace MiniBankSystemProject
             }
 
         }
-
+        // save complaints into file
         public static void SaveComplaints()
         {
             try
@@ -395,7 +427,7 @@ namespace MiniBankSystemProject
             }
 
         }
-
+        // load complaints from file to list
         public static void LoadComplaints()
         {
             try
@@ -414,6 +446,7 @@ namespace MiniBankSystemProject
             }
 
         }
+        // admin view all complaints from user
         public static void ViewAllComplaints()
         {
             try
@@ -425,7 +458,7 @@ namespace MiniBankSystemProject
                 else
                 {
                     Console.WriteLine("\n--- All User Complaints ---");
-                    foreach (var complaint in complaints.Reverse())
+                    foreach (var complaint in complaints)
                     {
                         Console.WriteLine($"- {complaint}");
                     }
