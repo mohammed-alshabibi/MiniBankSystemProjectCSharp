@@ -40,6 +40,7 @@ namespace MiniBankSystemProject
             // handle any exceptions that may occur during the welcome menu
             try
             {
+                Console.Clear();
                 Console.WriteLine("\n--- Welcome to the Mini Bank System ---");
                 Console.WriteLine("1. Admin");
                 Console.WriteLine("2. User");
@@ -59,6 +60,7 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in Welcome Menu: {ex.Message}");
             }
+            
 
         }
         // Display the admin menu and prompt user for selection
@@ -70,7 +72,7 @@ namespace MiniBankSystemProject
                 bool exit = true;
                 while (exit)
                 {
-                    
+                    Console.Clear();
                     Console.WriteLine("\n--- Admin Menu ---");
                     Console.WriteLine("1. Process Account Requests");
                     Console.WriteLine("2. Search Account by Name/National ID");
@@ -102,7 +104,9 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in Admin Menu: {ex.Message}");
             }
-
+            Console.WriteLine("Please press any key to countune");
+            Console.ReadKey();
+            
 
             }
         // Display the user menu and prompt user for selection
@@ -141,8 +145,7 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in User Menu: {ex.Message}");
             }
-
-
+           
             }
         // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
@@ -189,6 +192,7 @@ namespace MiniBankSystemProject
                 Console.WriteLine($"Error in RequestCreateBankAccount: {ex.Message}");
 
             }
+
         }
         // Process the account creation request
         public static void ProcessCreateBankAccountRequest()
@@ -196,7 +200,10 @@ namespace MiniBankSystemProject
             if (createAccountRequests.Count == 0)
             {
                 Console.WriteLine("No requests to process.");
-                return;
+                Console.WriteLine("Please press any key to countune");
+                Console.ReadKey();
+                AdminMenu();
+               
             }
 
             string request = createAccountRequests.Dequeue();
