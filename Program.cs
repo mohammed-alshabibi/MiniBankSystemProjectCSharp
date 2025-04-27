@@ -7,6 +7,7 @@ namespace MiniBankSystemProject
 {
     internal class Program
     {
+        // File to store user login information and account details
         const string UserLogInFile = "accounts.txt";
         static List<string> names = new List<string>();
         static List<string> nationalIds = new List<string>();
@@ -19,28 +20,45 @@ namespace MiniBankSystemProject
 
         static void Main(string[] args)
         {
-            LoadAccounts();
-            WelcomeMenu();
+            try
+            {
+                // Load existing accounts and complaints from files
+                LoadAccounts();
+                LoadComplaints();
+                WelcomeMenu();
+            }catch(Exception ex)
+            {
+                Console.WriteLine($"Error during initialization: {ex.Message}");
+            }
+            
         }
-
+        // Display the welcome menu and prompt user for selection
         public static void WelcomeMenu()
         {
-            Console.WriteLine("\n--- Welcome to the Mini Bank System ---");
-            Console.WriteLine("1. Admin");
-            Console.WriteLine("2. User");
-            Console.WriteLine("3. Exit");
-            Console.Write("Please select an option: ");
-            string choice = Console.ReadLine();
-
-            switch (choice)
+            try
             {
-                case "1": AdminMenu(); break;
-                case "2": UserMenu(); break;
-                case "3": SaveAccounts(); Environment.Exit(0); break;
-                default: Console.WriteLine("Invalid choice, please try again."); WelcomeMenu(); break;
-            }
-        }
+                Console.WriteLine("\n--- Welcome to the Mini Bank System ---");
+                Console.WriteLine("1. Admin");
+                Console.WriteLine("2. User");
+                Console.WriteLine("3. Exit");
+                Console.Write("Please select an option: ");
+                string choice = Console.ReadLine();
 
+                switch (choice)
+                {
+                    case "1": AdminMenu(); break;
+                    case "2": UserMenu(); break;
+                    case "3": SaveAccounts(); SaveComplaints(); Environment.Exit(0); break;
+                    default: Console.WriteLine("Invalid choice, please try again."); WelcomeMenu(); break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Welcome Menu: {ex.Message}");
+            }
+
+        }
+        // Display the admin menu and prompt user for selection
         public static void AdminMenu()
         {
             bool exit = true;
@@ -52,9 +70,9 @@ namespace MiniBankSystemProject
                 Console.WriteLine("2. Search Account by Name/National ID");
                 Console.WriteLine("3. Delete Account");
                 Console.WriteLine("4. View All Accounts");
-                Console.WriteLine("5. Show Top 3 Richest Customers");
-                Console.WriteLine("6. Show Total Bank Balance");
-                Console.WriteLine("7. Export All Accounts");
+                Console.WriteLine("5. Show Total Bank Balance");
+                Console.WriteLine("6. Export All Accounts");
+                Console.WriteLine("7. View All Complaints");
                 Console.WriteLine("8. Back to Main Menu");
                 Console.Write("Select an option: ");
                 string choice = Console.ReadLine();
@@ -65,9 +83,9 @@ namespace MiniBankSystemProject
                     case "2": SearchAccount(); break;
                     case "3": DeleteAccount(); break;
                     case "4": ViewAllAccounts(); break;
-                    case "5": ShowTop3Richest(); break;
-                    case "6": ShowTotalBankBalance(); break;
-                    case "7": ExportAccounts(); break;
+                    case "5": ShowTotalBankBalance(); break;
+                    case "6": ExportAccounts(); break;
+                    case "7": ViewAllComplaints(); break;
                     case "8": WelcomeMenu(); break;
                     default: Console.WriteLine("Invalid choice."); AdminMenu();exit = false; break;
                 }
@@ -75,29 +93,34 @@ namespace MiniBankSystemProject
             }
             
         }
-
+        // Display the user menu and prompt user for selection
         public static void UserMenu()
         {
-            Console.WriteLine("\n--- User Menu ---");
-            Console.WriteLine("1. Create Account Request");
-            Console.WriteLine("2. Login");
-            Console.WriteLine("3. Submit Complaint");
-            Console.WriteLine("4. Undo Last Complaint");
-            Console.WriteLine("5. Back to Main Menu");
-            Console.Write("Select an option: ");
-            string choice = Console.ReadLine();
-
-            switch (choice)
+            bool flag = true;
+            while (flag)
             {
-                case "1": RequestCreateBankAccount(); break;
-                case "2": LoginUserAccount(); break;
-                case "3": SubmitComplaint(); break;
-                case "4": UndoLastComplaint(); break;
-                case "5": WelcomeMenu(); break;
-                default: Console.WriteLine("Invalid choice."); UserMenu(); break;
-            }
-        }
+                Console.WriteLine("\n--- User Menu ---");
+                Console.WriteLine("1. Create Account Request");
+                Console.WriteLine("2. Login");
+                Console.WriteLine("3. Submit Complaint");
+                Console.WriteLine("4. Undo Last Complaint");
+                Console.WriteLine("5. Back to Main Menu");
+                Console.Write("Select an option: ");
+                string choice = Console.ReadLine();
 
+                switch (choice)
+                {
+                    case "1": RequestCreateBankAccount(); break;
+                    case "2": LoginUserAccount(); break;
+                    case "3": SubmitComplaint(); break;
+                    case "4": UndoLastComplaint(); break;
+                    case "5": WelcomeMenu(); break;
+                    default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
+                }
+            }
+           
+        }
+        // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
         {
             lastAccountNumber++;
@@ -108,7 +131,7 @@ namespace MiniBankSystemProject
             accountNumbers.Add(lastAccountNumber.ToString());
             Console.WriteLine($"Account created! Account Number: {lastAccountNumber}");
         }
-
+        // Request to create a new bank account
         public static void RequestCreateBankAccount()
         {
             Console.Write("Enter your name: ");
@@ -124,7 +147,7 @@ namespace MiniBankSystemProject
                 Console.WriteLine("Invalid balance.");
                 return;
             }
-
+            // Check if the account already exists or if a request is pending
             if (nationalIds.Contains(nationalId) || createAccountRequests.Any(r => r.Contains(nationalId)))
             {
                 Console.WriteLine("Account already exists or request pending.");
@@ -134,7 +157,7 @@ namespace MiniBankSystemProject
             createAccountRequests.Enqueue(name + "|" + nationalId + "|" + password + "|" + initialBalance);
             Console.WriteLine("Account request submitted!");
         }
-
+        // Process the account creation request
         public static void ProcessCreateBankAccountRequest()
         {
             if (createAccountRequests.Count == 0)
@@ -147,7 +170,7 @@ namespace MiniBankSystemProject
             var parts = request.Split('|');
             CreateAccount(parts[0], parts[1], parts[2], double.Parse(parts[3]));
         }
-
+        // Login to an existing user account
         public static void LoginUserAccount()
         {
             Console.Write("Enter National ID: ");
@@ -226,7 +249,7 @@ namespace MiniBankSystemProject
             }
             UserBankMenu(index);
         }
-
+        // Search for an account by national ID
         public static void SearchAccount()
         {
             Console.Write("Enter Name or National ID to search: ");
@@ -240,7 +263,7 @@ namespace MiniBankSystemProject
             else
                 Console.WriteLine("Account not found.");
         }
-
+        // Delete an account
         public static void DeleteAccount()
         {
             Console.Write("Enter Account Number to delete: ");
@@ -258,7 +281,7 @@ namespace MiniBankSystemProject
             else
                 Console.WriteLine("Account not found.");
         }
-
+        // View all accounts
         public static void ViewAllAccounts()
         {
             for (int i = 0; i < names.Count; i++)
@@ -266,20 +289,13 @@ namespace MiniBankSystemProject
                 Console.WriteLine($"{accountNumbers[i]} | {names[i]} | {balances[i]:C}");
             }
         }
-
-        public static void ShowTop3Richest()
-        {
-            var top = balances.Select((bal, i) => new { bal, i }).OrderByDescending(x => x.bal).Take(3);
-            foreach (var acc in top)
-                Console.WriteLine($"{names[acc.i]} - {balances[acc.i]:C}");
-        }
-
+        // Show the total bank balance
         public static void ShowTotalBankBalance()
         {
             double total = balances.Sum();
             Console.WriteLine($"Total Bank Balance: {total:C}");
         }
-
+        // Export all accounts to a file
         public static void ExportAccounts()
         {
             using (StreamWriter sw = new StreamWriter("ExportedAccounts.txt"))
@@ -290,14 +306,14 @@ namespace MiniBankSystemProject
             }
             Console.WriteLine("Exported successfully.");
         }
-
+        // Submit a complaint
         public static void SubmitComplaint()
         {
             Console.Write("Enter complaint: ");
             complaints.Push(Console.ReadLine());
             Console.WriteLine("Complaint submitted.");
         }
-
+        // Undo the last complaint
         public static void UndoLastComplaint()
         {
             if (complaints.Count > 0)
@@ -308,37 +324,121 @@ namespace MiniBankSystemProject
             else
                 Console.WriteLine("No complaints to undo.");
         }
-
+        // Print a receipt for transactions
         public static void PrintReceipt(string type, int index, double amount)
         {
             string receipt = $"{type} Receipt\nName: {names[index]}\nAccount#: {accountNumbers[index]}\nAmount: {amount:C}\nBalance: {balances[index]:C}\nDate: {DateTime.Now}";
             Console.WriteLine(receipt);
             File.AppendAllText("receipts.txt", receipt + "\n\n");
         }
-
+        // save accounts in to login file
         public static void SaveAccounts()
         {
-            using (StreamWriter sw = new StreamWriter(UserLogInFile))
+            try
             {
-                for (int i = 0; i < names.Count; i++)
-                    sw.WriteLine($"{names[i]}|{nationalIds[i]}|{passwords[i]}|{balances[i]}|{accountNumbers[i]}");
-            }
-        }
-
-        public static void LoadAccounts()
-        {
-            if (File.Exists(UserLogInFile))
-            {
-                foreach (var line in File.ReadAllLines(UserLogInFile))
+                using (StreamWriter sw = new StreamWriter(UserLogInFile))
                 {
-                    var parts = line.Split('|');
-                    names.Add(parts[0]);
-                    nationalIds.Add(parts[1]);
-                    passwords.Add(parts[2]);
-                    balances.Add(double.Parse(parts[3]));
-                    accountNumbers.Add(parts[4]);
+                    for (int i = 0; i < names.Count; i++)
+                        sw.WriteLine($"{names[i]}|{nationalIds[i]}|{passwords[i]}|{balances[i]}|{accountNumbers[i]}");
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving accounts: {ex.Message}");
+            }
+
         }
+        // load accounts from file to list
+        public static void LoadAccounts()
+        {
+            try
+            {
+                if (File.Exists(UserLogInFile))
+                {
+                    foreach (var line in File.ReadAllLines(UserLogInFile))
+                    {
+                        var parts = line.Split('|');
+                        names.Add(parts[0]);
+                        nationalIds.Add(parts[1]);
+                        passwords.Add(parts[2]);
+                        balances.Add(double.Parse(parts[3]));
+                        accountNumbers.Add(parts[4]);
+                    }
+                    if (accountNumbers.Count > 0)
+                    {
+                        lastAccountNumber = accountNumbers.Max(x => int.Parse(x));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading accounts: {ex.Message}");
+            }
+
+        }
+
+        public static void SaveComplaints()
+        {
+            try
+            {
+                using (StreamWriter sw = new StreamWriter("complaints.txt"))
+                {
+                    foreach (var complaint in complaints)
+                    {
+                        sw.WriteLine(complaint);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving complaints: {ex.Message}");
+            }
+
+        }
+
+        public static void LoadComplaints()
+        {
+            try
+            {
+                if (File.Exists("complaints.txt"))
+                {
+                    foreach (var line in File.ReadAllLines("complaints.txt"))
+                    {
+                        complaints.Push(line);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading complaints: {ex.Message}");
+            }
+
+        }
+        public static void ViewAllComplaints()
+        {
+            try
+            {
+                if (complaints.Count == 0)
+                {
+                    Console.WriteLine("No complaints available.");
+                }
+                else
+                {
+                    Console.WriteLine("\n--- All User Complaints ---");
+                    foreach (var complaint in complaints.Reverse())
+                    {
+                        Console.WriteLine($"- {complaint}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error viewing complaints: {ex.Message}");
+            }
+
+            AdminMenu();
+        }
+
+
     }
 }
