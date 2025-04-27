@@ -16,6 +16,7 @@ namespace MiniBankSystemProject
         static List<string> accountNumbers = new List<string>();
         static Queue<string> createAccountRequests = new Queue<string>();
         static Stack<string> complaints = new Stack<string>();
+        static List<string> transferHistory = new List<string>();
         static int lastAccountNumber = 1000;
 
         static void Main(string[] args)
@@ -25,6 +26,7 @@ namespace MiniBankSystemProject
                 // Load existing accounts and complaints from files
                 LoadAccounts();
                 LoadComplaints();
+                LoadTransferHistory();
                 WelcomeMenu();
             }catch(Exception ex)
             {
@@ -35,6 +37,7 @@ namespace MiniBankSystemProject
         // Display the welcome menu and prompt user for selection
         public static void WelcomeMenu()
         {
+            // handle any exceptions that may occur during the welcome menu
             try
             {
                 Console.WriteLine("\n--- Welcome to the Mini Bank System ---");
@@ -48,7 +51,7 @@ namespace MiniBankSystemProject
                 {
                     case "1": AdminMenu(); break;
                     case "2": UserMenu(); break;
-                    case "3": SaveAccounts(); SaveComplaints(); Environment.Exit(0); break;
+                    case "3": SaveAccounts(); SaveComplaints();SaveTransferHistory(); Environment.Exit(0); break;
                     default: Console.WriteLine("Invalid choice, please try again."); WelcomeMenu(); break;
                 }
             }
@@ -61,12 +64,13 @@ namespace MiniBankSystemProject
         // Display the admin menu and prompt user for selection
         public static void AdminMenu()
         {
+            // handle any exceptions that may occur during the admin menu
             try
             {
                 bool exit = true;
                 while (exit)
                 {
-
+                    
                     Console.WriteLine("\n--- Admin Menu ---");
                     Console.WriteLine("1. Process Account Requests");
                     Console.WriteLine("2. Search Account by Name/National ID");
@@ -104,17 +108,20 @@ namespace MiniBankSystemProject
         // Display the user menu and prompt user for selection
         public static void UserMenu()
         {
+            // handle any exceptions that may occur during the user menu
             try
             {
                 bool flag = true;
                 while (flag)
                 {
+                    
                     Console.WriteLine("\n--- User Menu ---");
                     Console.WriteLine("1. Create Account Request");
                     Console.WriteLine("2. Login");
                     Console.WriteLine("3. Submit Complaint");
                     Console.WriteLine("4. Undo Last Complaint");
-                    Console.WriteLine("5. Back to Main Menu");
+                    Console.WriteLine("5. View Transfer History");
+                    Console.WriteLine("6. Back to Main Menu");
                     Console.Write("Select an option: ");
                     string choice = Console.ReadLine();
 
@@ -124,7 +131,8 @@ namespace MiniBankSystemProject
                         case "2": LoginUserAccount(); break;
                         case "3": SubmitComplaint(); break;
                         case "4": UndoLastComplaint(); break;
-                        case "5": WelcomeMenu(); break;
+                        case "5": ViewTransferHistory(); break;
+                        case "6": WelcomeMenu(); break;
                         default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
                     }
                 }
@@ -139,6 +147,7 @@ namespace MiniBankSystemProject
         // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
         {
+            // store the account details in the lists
             lastAccountNumber++;
             names.Add(name);
             nationalIds.Add(nationalId);
@@ -472,6 +481,63 @@ namespace MiniBankSystemProject
             AdminMenu();
         }
 
+        public static void ViewTransferHistory()
+        {
+            if (transferHistory.Count == 0)
+            {
+                Console.WriteLine("No transfer history available.");
+            }
+            else
+            {
+                Console.WriteLine("\n--- Transfer History ---");
+                foreach (var record in transferHistory)
+                {
+                    Console.WriteLine(record);
+                }
+            }
+        }
+
+        public static void RecordTransfer(string fromAccount, string toAccount, double amount)
+        {
+            string transferRecord = $"From: {fromAccount} To: {toAccount} Amount: {amount:C} Date: {DateTime.Now}";
+            transferHistory.Add(transferRecord);
+        }
+
+        public static void SaveTransferHistory()
+        {
+            try
+            {
+                using (StreamWriter sw = new StreamWriter("transferHistory.txt"))
+                {
+                    foreach (var record in transferHistory)
+                    {
+                        sw.WriteLine(record);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving transfer history: {ex.Message}");
+            }
+        }
+
+        public static void LoadTransferHistory()
+        {
+            try
+            {
+                if (File.Exists("transferHistory.txt"))
+                {
+                    foreach (var line in File.ReadAllLines("transferHistory.txt"))
+                    {
+                        transferHistory.Add(line);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading transfer history: {ex.Message}");
+            }
+        }
 
     }
 }
