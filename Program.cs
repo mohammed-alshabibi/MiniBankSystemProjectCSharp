@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 
 namespace MiniBankSystemProject
@@ -18,6 +20,18 @@ namespace MiniBankSystemProject
         static Stack<string> complaints = new Stack<string>();
         static List<string> transferHistory = new List<string>();
         static int lastAccountNumber = 1000;
+        static List<int> failedLoginAttempts = new List<int>();
+        static List<bool> isLocked = new List<bool>();
+        static List<List<string>> allTransactions = new List<List<string>>();
+        const string TransactionFile = "transactions.txt";
+        static List<double> loanAmounts = new List<double>();
+        static List<double> loanInterestRates = new List<double>();
+        static List<string> loanStatus = new List<string>(); // None, Pending, Approved, Rejected
+        static List<List<int>> feedbackScores = new List<List<int>>();
+        const double USD_TO_OMR = 3.8;
+        const double EUR_TO_OMR = 4.1;
+        static Queue<string> appointmentQueue = new Queue<string>();
+        static List<bool> hasAppointment = new List<bool>(); // parallel to users
 
         static void Main(string[] args)
         {
@@ -27,6 +41,7 @@ namespace MiniBankSystemProject
                 LoadAccounts();
                 LoadComplaints();
                 LoadTransferHistory();
+                LoadTransactions();
                 WelcomeMenu();
             }catch(Exception ex)
             {
@@ -50,9 +65,29 @@ namespace MiniBankSystemProject
 
                 switch (choice)
                 {
-                    case "1": AdminMenu(); break;
+                    case "1":
+                        if (AdminLogin())
+                            AdminMenu();
+                        else
+                            WelcomeMenu();
+                        break;
+
                     case "2": UserMenu(); break;
-                    case "3": SaveAccounts(); SaveComplaints();SaveTransferHistory(); Environment.Exit(0); break;
+                    case "3":
+                        SaveAccounts();
+                        SaveComplaints();
+                        SaveTransferHistory();
+                        SaveTransactions();
+
+                        Console.Write("Would you like to create a backup file? (y/n): ");
+                        string input = Console.ReadLine().ToLower();
+                        if (input == "y")
+                        {
+                            BackupAllData();
+                        }
+
+                        Environment.Exit(0);
+                        break;
                     default: Console.WriteLine("Invalid choice, please try again."); WelcomeMenu(); break;
                 }
             }
@@ -83,6 +118,11 @@ namespace MiniBankSystemProject
                     Console.WriteLine("6. Export All Accounts");
                     Console.WriteLine("7. View All Complaints");
                     Console.WriteLine("8. Back to Main Menu");
+                    Console.WriteLine("9. Process Loan Requests");
+                    Console.WriteLine("10. View Feedback Summary");
+                    Console.WriteLine("11. View Appointments"); // New option for viewing appointments
+                    Console.WriteLine("12. Unlock Locked Account");
+                    Console.WriteLine("13. Show Top 3 Richest Customers");
                     Console.Write("Select an option: ");
                     string choice = Console.ReadLine();
 
@@ -96,6 +136,22 @@ namespace MiniBankSystemProject
                         case "6": ExportAccounts(); break;
                         case "7": ViewAllComplaints(); break;
                         case "8": WelcomeMenu(); break;
+                        case "9":
+                            ProcessLoanRequests();
+                            break;
+                        case "10":
+                            ViewFeedbackSummary();
+                            break;
+                        case "11":
+                            ViewAppointments();
+                            break;
+                        case "12":
+                            UnlockAccount();
+                            break;
+                        case "13":
+                            ShowTop3RichestCustomers();
+                            break;
+
                         default: Console.WriteLine("Invalid choice."); AdminMenu(); exit = false; break;
                     }
 
@@ -149,6 +205,29 @@ namespace MiniBankSystemProject
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
         }
+        public static bool AdminLogin()
+        {
+            const string adminId = "admin";
+            const string adminPassword = "admin123"; // You can also hash this if you want
+
+            Console.Write("Enter Admin ID: ");
+            string inputId = Console.ReadLine();
+
+            Console.Write("Enter Admin Password: ");
+            string inputPassword = ReadPassword();
+
+            if (inputId == adminId && inputPassword == adminPassword)
+            {
+                Console.WriteLine("Admin login successful.");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Invalid admin credentials.");
+                return false;
+            }
+        }
+
         // Create a new account and add it to the lists
         public static void CreateAccount(string name, string nationalId, string password, double balance)
         {
@@ -159,11 +238,143 @@ namespace MiniBankSystemProject
             passwords.Add(password);
             balances.Add(balance);
             accountNumbers.Add(lastAccountNumber.ToString());
+            loanAmounts.Add(0);
+            loanInterestRates.Add(0);
+            loanStatus.Add("None");
+            hasAppointment.Add(false);
+            feedbackScores.Add(new List<int>());
+            allTransactions.Add(new List<string>()); // Add empty transaction list for new user
+            // Add initial values for lock and failed login tracking
+            failedLoginAttempts.Add(0);
+            isLocked.Add(false);
             Console.WriteLine($"Account created! Account Number: {lastAccountNumber}");
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
             UserMenu();
         }
+        public static void AskForFeedback(int index)
+        {
+            Console.Write("Rate our service (1–5): ");
+            if (int.TryParse(Console.ReadLine(), out int rating) && rating >= 1 && rating <= 5)
+            {
+                feedbackScores[index].Add(rating);
+                Console.WriteLine("Thank you for your feedback!");
+            }
+            else
+            {
+                Console.WriteLine("Invalid rating.");
+            }
+        }
+
+        public static void RequestLoan(int index)
+        {
+            if (loanStatus[index] != "None")
+            {
+                Console.WriteLine("You already have an active or pending loan.");
+                return;
+            }
+
+            if (balances[index] < 5000)
+            {
+                Console.WriteLine("You must have at least 5000 balance to request a loan.");
+                return;
+            }
+
+            Console.Write("Enter loan amount: ");
+            if (double.TryParse(Console.ReadLine(), out double loanAmount) && loanAmount > 0)
+            {
+                loanAmounts[index] = loanAmount;
+                loanInterestRates[index] = 0.05; // 5% fixed rate for example
+                loanStatus[index] = "Pending";
+
+                Console.WriteLine("Loan request submitted and pending approval.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid loan amount.");
+            }
+        }
+        public static void ProcessLoanRequests()
+        {
+            bool found = false;
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (loanStatus[i] == "Pending")
+                {
+                    found = true;
+                    Console.WriteLine($"\nLoan Request from {names[i]} (Account: {accountNumbers[i]})");
+                    Console.WriteLine($"Requested: {loanAmounts[i]} | Rate: {loanInterestRates[i] * 100}%");
+
+                    Console.Write("Approve (A) / Reject (R): ");
+                    string input = Console.ReadLine().ToUpper();
+
+                    if (input == "A")
+                    {
+                        balances[i] += loanAmounts[i];
+                        loanStatus[i] = "Approved";
+                        Console.WriteLine("Loan approved and amount added to account.");
+                    }
+                    else if (input == "R")
+                    {
+                        loanStatus[i] = "Rejected";
+                        loanAmounts[i] = 0;
+                        loanInterestRates[i] = 0;
+                        Console.WriteLine("Loan rejected.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Skipped.");
+                    }
+                }
+            }
+
+            if (!found)
+                Console.WriteLine("No pending loan requests.");
+
+            Console.WriteLine("Press any key to return to Admin Menu...");
+            Console.ReadKey();
+            AdminMenu();
+        }
+        public static void BookAppointment(int index)
+        {
+            if (hasAppointment[index])
+            {
+                Console.WriteLine("You already have a pending appointment.");
+                return;
+            }
+
+            Console.Write("Enter appointment purpose (e.g., Loan Consultation): ");
+            string purpose = Console.ReadLine();
+
+            DateTime date = DateTime.Now.AddDays(1); // For simplicity: next day
+            string appointment = $"{accountNumbers[index]} | {names[index]} | {date:yyyy-MM-dd HH:mm} | {purpose}";
+
+            appointmentQueue.Enqueue(appointment);
+            hasAppointment[index] = true;
+
+            Console.WriteLine("Appointment booked for: " + date.ToString("yyyy-MM-dd HH:mm"));
+        }
+        public static void ViewAppointments()
+        {
+            if (appointmentQueue.Count == 0)
+            {
+                Console.WriteLine("No appointments scheduled.");
+            }
+            else
+            {
+                Console.WriteLine("--- Appointment Queue ---");
+                foreach (var app in appointmentQueue)
+                {
+                    Console.WriteLine(app);
+                }
+            }
+
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            AdminMenu();
+        }
+
         // Request to create a new bank account
         public static void RequestCreateBankAccount()
         {
@@ -171,17 +382,21 @@ namespace MiniBankSystemProject
             {
                 Console.Write("Enter your name: ");
                 string name = Console.ReadLine();
+
                 Console.Write("Enter your national ID: ");
                 string nationalId = Console.ReadLine();
-                Console.Write("Enter your password: ");
-                string password = Console.ReadLine();
-                Console.Write("Enter initial balance: ");
 
+                Console.Write("Enter your password: ");
+                string rawPassword = ReadPassword(); // masked input
+                string hashedPassword = HashPassword(rawPassword); //  secure hash
+
+                Console.Write("Enter initial balance: ");
                 if (!double.TryParse(Console.ReadLine(), out double initialBalance))
                 {
                     Console.WriteLine("Invalid balance.");
                     return;
                 }
+
                 // Check if the account already exists or if a request is pending
                 if (nationalIds.Contains(nationalId) || createAccountRequests.Any(r => r.Contains(nationalId)))
                 {
@@ -189,16 +404,72 @@ namespace MiniBankSystemProject
                     return;
                 }
 
-                createAccountRequests.Enqueue(name + "|" + nationalId + "|" + password + "|" + initialBalance);
+                // Save the hashed password instead of the raw one
+                createAccountRequests.Enqueue($"{name}|{nationalId}|{hashedPassword}|{initialBalance}");
                 Console.WriteLine("Account request submitted!");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in RequestCreateBankAccount: {ex.Message}");
+            }
+        }
+        public static void UnlockAccount()
+        {
+            Console.Write("Enter account number to unlock: ");
+            string accNum = Console.ReadLine();
 
+            int index = accountNumbers.IndexOf(accNum);
+            if (index == -1)
+            {
+                Console.WriteLine("Account not found.");
+            }
+            else if (!isLocked[index])
+            {
+                Console.WriteLine("Account is not locked.");
+            }
+            else
+            {
+                isLocked[index] = false;
+                failedLoginAttempts[index] = 0;
+                Console.WriteLine("Account unlocked successfully.");
             }
 
+            Console.WriteLine("Press any key to return to Admin Menu...");
+            Console.ReadKey();
+            AdminMenu();
         }
+
+        public static string ReadPassword()
+        {
+            StringBuilder password = new StringBuilder();
+            ConsoleKeyInfo key;
+            do
+            {
+                key = Console.ReadKey(true);
+                if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+                {
+                    password.Append(key.KeyChar);
+                    Console.Write("*");
+                }
+                else if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+                {
+                    password.Remove(password.Length - 1, 1);
+                    Console.Write("\b \b");
+                }
+            } while (key.Key != ConsoleKey.Enter);
+            Console.WriteLine();
+            return password.ToString();
+        }
+
+        public static string HashPassword(string password)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(hash);
+            }
+        }
+
         // Process the account creation request
         public static void ProcessCreateBankAccountRequest()
         {
@@ -220,19 +491,50 @@ namespace MiniBankSystemProject
         {
             Console.Write("Enter National ID: ");
             string nationalId = Console.ReadLine();
-            Console.Write("Enter password: ");
-            string password = Console.ReadLine();
 
             int index = nationalIds.IndexOf(nationalId);
-            if (index != -1 && passwords[index] == password)
+            if (index == -1)
             {
+                Console.WriteLine("Account not found.");
+                return;
+            }
+
+           // Lock check
+            if (isLocked.Count > index && isLocked[index])
+            {
+                Console.WriteLine("Account is locked. Contact admin.");
+                return;
+            }
+
+            Console.Write("Enter password: ");
+            string enteredPassword = ReadPassword(); // masked input
+            string hashedInput = HashPassword(enteredPassword); //  hashed
+
+            if (passwords[index] == hashedInput)
+            {
+                Console.WriteLine("Login successful!");
+                if (failedLoginAttempts.Count > index)
+                    failedLoginAttempts[index] = 0;
+
                 UserBankMenu(index);
             }
             else
             {
-                Console.WriteLine("Login failed.");
+                Console.WriteLine("Incorrect password.");
+
+                // Track failed login attempts
+                if (failedLoginAttempts.Count > index)
+                {
+                    failedLoginAttempts[index]++;
+                    if (failedLoginAttempts[index] >= 3)
+                    {
+                        isLocked[index] = true;
+                        Console.WriteLine("Account locked due to 3 failed login attempts.");
+                    }
+                }
             }
         }
+
         // Display the user bank menu and prompt user for selection
         public static void UserBankMenu(int index)
         {
@@ -244,35 +546,75 @@ namespace MiniBankSystemProject
                 Console.WriteLine("3. Withdraw");
                 Console.WriteLine("4. Transfer");
                 Console.WriteLine("5. Logout");
+                Console.WriteLine("6. Generate Monthly Statement");  //  new menu option
+                Console.WriteLine("7. Request Loan");
+                Console.WriteLine("8. Filter My Transactions");  // next after "7. Request Loan"
+                Console.WriteLine("9. Book Appointment"); // New option for booking appointment
                 Console.Write("Select an option: ");
                 string choice = Console.ReadLine();
 
                 switch (choice)
                 {
-
                     case "1":
                         Console.WriteLine($"Your balance is {balances[index]:C}");
                         break;
+
                     case "2":
+                        Console.WriteLine("Select currency for deposit:");
+                        Console.WriteLine("1. OMR (default)");
+                        Console.WriteLine("2. USD");
+                        Console.WriteLine("3. EUR");
+                        Console.Write("Choice: ");
+                        string currencyChoice = Console.ReadLine();
+
                         Console.Write("Enter deposit amount: ");
-                        if (double.TryParse(Console.ReadLine(), out double deposit))
+                        if (!double.TryParse(Console.ReadLine(), out double originalAmount) || originalAmount <= 0)
                         {
-                            balances[index] += deposit;
-                            PrintReceipt("Deposit", index, deposit);
+                            Console.WriteLine("Invalid amount.");
+                            break;
                         }
+
+                        double convertedAmount = originalAmount;
+                        string currencyUsed = "OMR";
+
+                        switch (currencyChoice)
+                        {
+                            case "2":
+                                currencyUsed = "USD";
+                                convertedAmount = originalAmount * USD_TO_OMR;
+                                break;
+                            case "3":
+                                currencyUsed = "EUR";
+                                convertedAmount = originalAmount * EUR_TO_OMR;
+                                break;
+                        }
+
+                        balances[index] += convertedAmount;
+
+                        string transaction = $"Deposit ({currencyUsed})|{originalAmount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}|Converted: {convertedAmount:F2} OMR";
+                        allTransactions[index].Add(transaction);
+
+                        PrintReceipt("Deposit", index, convertedAmount);
+                        AskForFeedback(index);
+
                         break;
+
                     case "3":
                         Console.Write("Enter withdraw amount: ");
                         if (double.TryParse(Console.ReadLine(), out double withdraw) && balances[index] >= withdraw)
                         {
                             balances[index] -= withdraw;
+                            string withdrawTransaction = $"Withdraw|{withdraw}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
+                            allTransactions[index].Add(withdrawTransaction); //  log it
                             PrintReceipt("Withdraw", index, withdraw);
+                            AskForFeedback(index);
                         }
                         else
                         {
                             Console.WriteLine("Insufficient funds.");
                         }
                         break;
+
                     case "4":
                         Console.Write("Enter recipient account number: ");
                         string recipient = Console.ReadLine();
@@ -284,41 +626,183 @@ namespace MiniBankSystemProject
                             {
                                 balances[index] -= amount;
                                 balances[receiverIndex] += amount;
+
+                                //  log for both sender and receiver
+                                string outTx = $"TransferTo:{accountNumbers[receiverIndex]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
+                                string inTx = $"TransferFrom:{accountNumbers[index]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[receiverIndex]}";
+                                allTransactions[index].Add(outTx);
+                                allTransactions[receiverIndex].Add(inTx);
+
                                 Console.WriteLine("Transfer successful.");
+                                AskForFeedback(index);
                             }
                             else
+                            {
                                 Console.WriteLine("Invalid amount or insufficient funds.");
+                            }
                         }
                         else
+                        {
                             Console.WriteLine("Recipient not found.");
+                        }
                         break;
-                    case "5": WelcomeMenu(); break;
-                    default: Console.WriteLine("Invalid option."); break;
+
+                    case "5":
+                        WelcomeMenu();
+                        return;
+
+                    case "6":
+                        GenerateMonthlyStatement(index); // Call the statement function
+                        break;
+                    case "7":
+                        RequestLoan(index);
+                        break;
+                    case "8":
+                        FilterTransactions(index);
+                        break;
+                    case "9":
+                        BookAppointment(index);
+                        break;
+
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
                 }
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine($"Error in UserBankMenu: {ex.Message}");
             }
 
-            UserBankMenu(index);
+            Console.WriteLine("Press any key to return to menu...");
+            Console.ReadKey();
+            UserBankMenu(index); // loop back
         }
-        // Search for an account by national ID
-        public static void SearchAccount()
+        public static void GenerateMonthlyStatement(int index)
         {
-            Console.Write("Enter Name or National ID to search: ");
-            string input = Console.ReadLine();
-            int index = names.IndexOf(input);
-            if (index == -1)
-                index = nationalIds.IndexOf(input);
+            Console.Write("Enter month (1–12): ");
+            int month = int.Parse(Console.ReadLine());
+            Console.Write("Enter year (e.g. 2025): ");
+            int year = int.Parse(Console.ReadLine());
 
-            if (index != -1)
-                Console.WriteLine($"Account: {accountNumbers[index]}, Balance: {balances[index]:C}");
-            else
-                Console.WriteLine("Account not found.");
-            Console.WriteLine("Please press any key to countune");
+            var filtered = allTransactions[index]
+                .Where(t => DateTime.Parse(t.Split('|')[2]).Month == month &&
+                            DateTime.Parse(t.Split('|')[2]).Year == year)
+                .ToList();
+
+            if (filtered.Count == 0)
+            {
+                Console.WriteLine("No transactions found for that period.");
+                return;
+            }
+
+            string fileName = $"Statement_{accountNumbers[index]}_{year}-{month:00}.txt";
+            using (StreamWriter sw = new StreamWriter(fileName))
+            {
+                sw.WriteLine($"Mini Bank Monthly Statement for {names[index]} - {month:00}/{year}");
+                sw.WriteLine("--------------------------------------------------");
+                sw.WriteLine("Type\t\tAmount\t\tDate\t\t\tBalance");
+                foreach (var tx in filtered)
+                {
+                    var parts = tx.Split('|');
+                    sw.WriteLine($"{parts[0]}\t\t{parts[1]}\t\t{parts[2]}\t\t{parts[3]}");
+                }
+            }
+
+            Console.WriteLine($"Statement saved to file: {fileName}");
+        }
+        public static void ViewFeedbackSummary()
+        {
+            Console.WriteLine("\n--- Feedback Summary ---");
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (feedbackScores[i].Count > 0)
+                {
+                    double average = feedbackScores[i].Average();
+                    Console.WriteLine($"{names[i]} ({accountNumbers[i]}): Avg Rating = {average:F2}");
+                }
+                else
+                {
+                    Console.WriteLine($"{names[i]} ({accountNumbers[i]}): No ratings yet.");
+                }
+            }
+
+            Console.WriteLine("Press any key to return to Admin Menu...");
             Console.ReadKey();
             AdminMenu();
         }
+        public static void BackupAllData()
+        {
+            string fileName = $"Backup_{DateTime.Now:yyyy-MM-dd_HHmm}.txt";
+
+            using (StreamWriter sw = new StreamWriter(fileName))
+            {
+                sw.WriteLine("===== Accounts =====");
+                for (int i = 0; i < names.Count; i++)
+                {
+                    sw.WriteLine($"{accountNumbers[i]} | {names[i]} | {nationalIds[i]} | Balance: {balances[i]:F2} | Locked: {isLocked[i]}");
+                }
+
+                sw.WriteLine("\n===== Transactions =====");
+                for (int i = 0; i < allTransactions.Count; i++)
+                {
+                    sw.WriteLine($"--- {names[i]} ({accountNumbers[i]}) ---");
+                    foreach (var tx in allTransactions[i])
+                    {
+                        sw.WriteLine(tx);
+                    }
+                }
+
+                sw.WriteLine("\n===== Complaints =====");
+                foreach (var complaint in complaints)
+                {
+                    sw.WriteLine($"- {complaint}");
+                }
+
+                sw.WriteLine("\n===== Feedback Summary =====");
+                for (int i = 0; i < names.Count; i++)
+                {
+                    var scores = feedbackScores[i];
+                    double avg = scores.Count > 0 ? scores.Average() : 0;
+                    sw.WriteLine($"{names[i]} | Ratings: {scores.Count} | Avg: {avg:F2}");
+                }
+
+                sw.WriteLine("\n===== Loan Requests =====");
+                for (int i = 0; i < names.Count; i++)
+                {
+                    if (loanStatus[i] != "None")
+                    {
+                        sw.WriteLine($"{names[i]} | Amount: {loanAmounts[i]} | Rate: {loanInterestRates[i]} | Status: {loanStatus[i]}");
+                    }
+                }
+
+                sw.WriteLine("\n===== End of Backup =====");
+            }
+
+            Console.WriteLine($"Backup saved to {fileName}");
+        }
+
+        // Search for an account by national ID
+        public static void SearchAccount()
+        {
+            Console.Write("Enter Name or National ID: ");
+            string input = Console.ReadLine();
+
+            var result = names
+                .Select((name, i) => new { Name = name, NationalID = nationalIds[i], Account = accountNumbers[i], Balance = balances[i] })
+                .FirstOrDefault(a => a.Name == input || a.NationalID == input);
+
+            if (result != null)
+                Console.WriteLine($"Account: {result.Account}, Balance: {result.Balance:C}");
+            else
+                Console.WriteLine("Account not found.");
+
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            AdminMenu();
+        }
+
         // Delete an account
         public static void DeleteAccount()
         {
@@ -407,15 +891,17 @@ namespace MiniBankSystemProject
                 using (StreamWriter sw = new StreamWriter(UserLogInFile))
                 {
                     for (int i = 0; i < names.Count; i++)
-                        sw.WriteLine($"{names[i]}|{nationalIds[i]}|{passwords[i]}|{balances[i]}|{accountNumbers[i]}");
+                    {
+                        sw.WriteLine($"{names[i]}|{nationalIds[i]}|{passwords[i]}|{balances[i]}|{accountNumbers[i]}|{failedLoginAttempts[i]}|{isLocked[i]}|{loanAmounts[i]}|{loanInterestRates[i]}|{loanStatus[i]}");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving accounts: {ex.Message}");
             }
-
         }
+
         // load accounts from file to list
         public static void LoadAccounts()
         {
@@ -431,7 +917,26 @@ namespace MiniBankSystemProject
                         passwords.Add(parts[2]);
                         balances.Add(double.Parse(parts[3]));
                         accountNumbers.Add(parts[4]);
+
+                        // New additions (fail-safe fallback for old lines)
+                        if (parts.Length > 9)
+                        {
+                            failedLoginAttempts.Add(int.Parse(parts[5]));
+                            isLocked.Add(bool.Parse(parts[6]));
+                            loanAmounts.Add(double.Parse(parts[7]));
+                            loanInterestRates.Add(double.Parse(parts[8]));
+                            loanStatus.Add(parts[9]);
+                        }
+                        else
+                        {
+                            failedLoginAttempts.Add(0);
+                            isLocked.Add(false);
+                            loanAmounts.Add(0);
+                            loanInterestRates.Add(0);
+                            loanStatus.Add("None");
+                        }
                     }
+
                     if (accountNumbers.Count > 0)
                     {
                         lastAccountNumber = accountNumbers.Max(x => int.Parse(x));
@@ -442,8 +947,61 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error loading accounts: {ex.Message}");
             }
-
         }
+        public static void FilterTransactions(int index)
+        {
+            Console.WriteLine("\n--- Transaction Filter Menu ---");
+            Console.WriteLine("1. Show Last N Transactions");
+            Console.WriteLine("2. Show Transactions After Date");
+            Console.Write("Choose an option: ");
+            string choice = Console.ReadLine();
+
+            if (index >= allTransactions.Count || allTransactions[index].Count == 0)
+            {
+                Console.WriteLine("No transactions found.");
+                return;
+            }
+
+            switch (choice)
+            {
+                case "1":
+                    Console.Write("Enter N (number of recent transactions to show): ");
+                    if (int.TryParse(Console.ReadLine(), out int n))
+                    {
+                        Console.WriteLine($"\nLast {n} transactions:");
+                        var lastN = allTransactions[index].TakeLast(n);
+                        foreach (var tx in lastN)
+                            Console.WriteLine(tx);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid number.");
+                    }
+                    break;
+
+                case "2":
+                    Console.Write("Enter date (yyyy-MM-dd): ");
+                    if (DateTime.TryParse(Console.ReadLine(), out DateTime filterDate))
+                    {
+                        Console.WriteLine($"\nTransactions after {filterDate:yyyy-MM-dd}:");
+                        var filtered = allTransactions[index]
+                            .Where(tx => DateTime.Parse(tx.Split('|')[2]) > filterDate);
+
+                        foreach (var tx in filtered)
+                            Console.WriteLine(tx);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid date format.");
+                    }
+                    break;
+
+                default:
+                    Console.WriteLine("Invalid option.");
+                    break;
+            }
+        }
+
         // save complaints into file
         public static void SaveComplaints()
         {
@@ -570,6 +1128,74 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error loading transfer history: {ex.Message}");
             }
+        }
+        public static void SaveTransactions()
+        {
+            try
+            {
+                using (StreamWriter sw = new StreamWriter(TransactionFile))
+                {
+                    for (int i = 0; i < allTransactions.Count; i++)
+                    {
+                        foreach (var tx in allTransactions[i])
+                        {
+                            sw.WriteLine($"{accountNumbers[i]}|{tx}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving transactions: {ex.Message}");
+            }
+        }
+        public static void LoadTransactions()
+        {
+            try
+            {
+                allTransactions = new List<List<string>>();
+                foreach (var _ in accountNumbers)
+                {
+                    allTransactions.Add(new List<string>());
+                }
+
+                if (File.Exists(TransactionFile))
+                {
+                    foreach (var line in File.ReadAllLines(TransactionFile))
+                    {
+                        var parts = line.Split('|');
+                        string accNum = parts[0];
+                        string tx = string.Join("|", parts.Skip(1));
+
+                        int index = accountNumbers.IndexOf(accNum);
+                        if (index != -1)
+                        {
+                            allTransactions[index].Add(tx);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading transactions: {ex.Message}");
+            }
+        }
+        public static void ShowTop3RichestCustomers()
+        {
+            var top3 = balances
+                .Select((balance, i) => new { Name = names[i], Account = accountNumbers[i], Balance = balance })
+                .OrderByDescending(x => x.Balance)
+                .Take(3);
+
+            Console.WriteLine("--- Top 3 Richest Customers ---");
+            foreach (var user in top3)
+            {
+                Console.WriteLine($"{user.Name} ({user.Account}) - {user.Balance:C}");
+            }
+
+            Console.WriteLine("Press any key to return...");
+            Console.ReadKey();
+            AdminMenu();
         }
 
     }
