@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -182,10 +183,7 @@ namespace MiniBankSystemProject
                     Console.WriteLine("\n--- User Menu ---");
                     Console.WriteLine("1. Create Account Request");
                     Console.WriteLine("2. Login");
-                    Console.WriteLine("3. Submit Complaint");
-                    Console.WriteLine("4. Undo Last Complaint");
-                    Console.WriteLine("5. View Transfer History");
-                    Console.WriteLine("6. Back to Main Menu");
+                    Console.WriteLine("3. Back to Main Menu");
                     Console.Write("Select an option: ");
                     string choice = Console.ReadLine();
 
@@ -193,10 +191,7 @@ namespace MiniBankSystemProject
                     {
                         case "1": RequestCreateBankAccount(); break;
                         case "2": LoginUserAccount(); break;
-                        case "3": SubmitComplaint(); break;
-                        case "4": UndoLastComplaint(); break;
-                        case "5": ViewTransferHistory(); break;
-                        case "6": WelcomeMenu(); break;
+                        case "3": WelcomeMenu(); break;
                         default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
                     }
                 }
@@ -601,11 +596,14 @@ namespace MiniBankSystemProject
                 Console.WriteLine("2. Deposit");
                 Console.WriteLine("3. Withdraw");
                 Console.WriteLine("4. Transfer");
-                Console.WriteLine("5. Logout");
-                Console.WriteLine("6. Generate Monthly Statement");  //  new menu option
-                Console.WriteLine("7. Request Loan");
-                Console.WriteLine("8. Filter My Transactions");  
-                Console.WriteLine("9. Book Appointment"); // New option for booking appointment
+                Console.WriteLine("5. Generate Monthly Statement");
+                Console.WriteLine("6. Request Loan");
+                Console.WriteLine("7. Filter My Transactions");
+                Console.WriteLine("8. Book Appointment");
+                Console.WriteLine("9. Submit Complaint");
+                Console.WriteLine("10. Undo Last Complaint");
+                Console.WriteLine("11. View Transfer History");
+                Console.WriteLine("12. Logout");
                 Console.Write("Select an option: ");
                 string choice = Console.ReadLine();
 
@@ -649,15 +647,11 @@ namespace MiniBankSystemProject
                                 break;
                         }
 
-
                         balances[index] += convertedAmount;
-
                         string transaction = $"Deposit ({currencyUsed})|{originalAmount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}|Converted: {convertedAmount:F2} OMR";
                         allTransactions[index].Add(transaction);
-
                         PrintReceipt("Deposit", index, convertedAmount, "OMR");
                         AskForFeedback(index);
-
                         break;
 
                     case "3":
@@ -666,7 +660,7 @@ namespace MiniBankSystemProject
                         {
                             balances[index] -= withdraw;
                             string withdrawTransaction = $"Withdraw|{withdraw}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
-                            allTransactions[index].Add(withdrawTransaction); //  log it
+                            allTransactions[index].Add(withdrawTransaction);
                             PrintReceipt("Withdraw", index, withdraw);
                             AskForFeedback(index);
                         }
@@ -687,44 +681,46 @@ namespace MiniBankSystemProject
                             {
                                 balances[index] -= amount;
                                 balances[receiverIndex] += amount;
-
-                                //  log for both sender and receiver
                                 string outTx = $"TransferTo:{accountNumbers[receiverIndex]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
                                 string inTx = $"TransferFrom:{accountNumbers[index]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[receiverIndex]}";
                                 allTransactions[index].Add(outTx);
                                 allTransactions[receiverIndex].Add(inTx);
-
+                                // Save to transfer history
+                                RecordTransfer(accountNumbers[index], accountNumbers[receiverIndex], amount);
+                                SaveTransferHistory();
                                 Console.WriteLine("Transfer successful.");
                                 AskForFeedback(index);
                             }
-                            else
-                            {
-                                Console.WriteLine("Invalid amount or insufficient funds.");
-                            }
+                            else Console.WriteLine("Invalid amount or insufficient funds.");
                         }
-                        else
-                        {
-                            Console.WriteLine("Recipient not found.");
-                        }
+                        else Console.WriteLine("Recipient not found.");
                         break;
 
                     case "5":
-                        WelcomeMenu();
-                        return;
-
-                    case "6":
-                        GenerateMonthlyStatement(index); // Call the statement function
+                        GenerateMonthlyStatement(index);
                         break;
-                    case "7":
+                    case "6":
                         RequestLoan(index);
                         break;
-                    case "8":
+                    case "7":
                         FilterTransactions(index);
                         break;
-                    case "9":
+                    case "8":
                         BookAppointment(index);
                         break;
-
+                    case "9":
+                        SubmitComplaint(index);
+                        break;
+                    case "10":
+                        UndoLastComplaint(index);
+                        break;
+                    case "11":
+                        ViewTransferHistory(index);
+                        break;
+                   
+                    case "12":
+                        WelcomeMenu();
+                        return;
                     default:
                         Console.WriteLine("Invalid option.");
                         break;
@@ -737,8 +733,9 @@ namespace MiniBankSystemProject
 
             Console.WriteLine("Press any key to return to menu...");
             Console.ReadKey();
-            UserBankMenu(index); // loop back
+            UserBankMenu(index);
         }
+
         public static void GenerateMonthlyStatement(int index)
         {
             Console.Write("Enter month (1–12): ");
@@ -914,17 +911,20 @@ namespace MiniBankSystemProject
             AdminMenu();
         }
         // Submit a complaint
-        public static void SubmitComplaint()
+        public static void SubmitComplaint(int index)
         {
-            Console.Write("Enter complaint: ");
-            complaints.Push(Console.ReadLine());
+            Console.Write("Enter your complaint: ");
+            string complaint = Console.ReadLine();
+            complaints.Push(complaint);
             Console.WriteLine("Complaint submitted.");
-            Console.WriteLine("Please press any key to countune");
+
+            Console.WriteLine("Press any key to return to your menu...");
             Console.ReadKey();
-            UserMenu();
+            UserBankMenu(index);
         }
+
         // Undo the last complaint
-        public static void UndoLastComplaint()
+        public static void UndoLastComplaint(int index)
         {
             if (complaints.Count > 0)
             {
@@ -935,7 +935,7 @@ namespace MiniBankSystemProject
                 Console.WriteLine("No complaints to undo.");
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
-            UserMenu();
+            UserBankMenu(index);
         }
         // Print a receipt for transactions
         public static void PrintReceipt(string type, int index, double amount, string currency = "OMR")
@@ -1146,14 +1146,14 @@ namespace MiniBankSystemProject
             AdminMenu();
         }
 
-        public static void ViewTransferHistory()
+        public static void ViewTransferHistory(int index)
         {
             if (transferHistory.Count == 0)
             {
                 Console.WriteLine("No transfer history available.");
                 Console.WriteLine("Please press any key to countune");
                 Console.ReadKey();
-                UserMenu();
+                UserBankMenu(index);
             }
             else
             {
