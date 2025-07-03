@@ -53,18 +53,59 @@ namespace MiniBankSystemProject
             }
             
         }
+        public static void PrintColored(string text, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(text);
+            Console.ResetColor();
+        }
+        public static void PrintBoxedMenu(string title, string[] options, ConsoleColor titleColor = ConsoleColor.Yellow)
+        {
+            Console.Clear();
+            int width = options.Max(o => o.Length);
+            width = Math.Max(width, title.Length);
+            width += 8; // padding
+
+            string top = $"╭{new string('─', width)}╮";
+            string bottom = $"╰{new string('─', width)}╯";
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(top);
+
+            string paddedTitle = $"│{new string(' ', (width - title.Length) / 2)}{title}{new string(' ', (width - title.Length + 1) / 2)}│";
+            Console.ForegroundColor = titleColor;
+            Console.WriteLine(paddedTitle);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+
+            Console.WriteLine($"├{new string('─', width)}┤");
+
+            foreach (var option in options)
+            {
+                string line = $"│  {option.PadRight(width - 2)}│";
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(line);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(bottom);
+            Console.ResetColor();
+        }
+
         // Display the welcome menu and prompt user for selection
         public static void WelcomeMenu()
         {
-            // handle any exceptions that may occur during the welcome menu
             try
             {
-                Console.Clear();
-                Console.WriteLine("\n--- Welcome to the Mini Bank System ---");
-                Console.WriteLine("1. Admin");
-                Console.WriteLine("2. User");
-                Console.WriteLine("3. Exit");
-                Console.Write("Please select an option: ");
+                string[] options = new string[]
+                {
+            "1. Admin Login",
+            "2. Login to Your Account",
+            "3. Exit"
+                };
+
+                PrintBoxedMenu("🌟 Mini Bank System 🌟", options);
+
+                Console.Write("\nSelect an option (1-3): ");
                 string choice = Console.ReadLine();
 
                 switch (choice)
@@ -76,13 +117,17 @@ namespace MiniBankSystemProject
                             WelcomeMenu();
                         break;
 
-                    case "2": UserMenu(); break;
+                    case "2":
+                        UserMenu();
+                        break;
+
                     case "3":
                         SaveAccounts();
                         SaveComplaints();
                         SaveTransferHistory();
                         SaveTransactions();
                         SaveAppointments();
+
                         Console.Write("Would you like to create a backup file? (y/n): ");
                         string input = Console.ReadLine().ToLower();
                         if (input == "y")
@@ -92,17 +137,23 @@ namespace MiniBankSystemProject
 
                         Environment.Exit(0);
                         break;
-                    default: Console.WriteLine("Invalid choice, please try again."); WelcomeMenu(); break;
+
+                    default:
+                        Console.WriteLine("Invalid choice, please try again.");
+                        Console.ReadKey();
+                        WelcomeMenu();
+                        break;
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in Welcome Menu: {ex.Message}");
             }
-            Console.WriteLine("Please press any key to countine");
-            Console.ReadKey();
 
+            Console.WriteLine("\nPlease press any key to continue...");
+            Console.ReadKey();
         }
+
         // Display the admin menu and prompt user for selection
         public static void AdminMenu()
         {
@@ -113,21 +164,24 @@ namespace MiniBankSystemProject
                 while (exit)
                 {
                     Console.Clear();
-                    Console.WriteLine("\n--- Admin Menu ---");
-                    Console.WriteLine("1. Process Account Requests");
-                    Console.WriteLine("2. Search Account by Name/National ID");
-                    Console.WriteLine("3. Delete Account");
-                    Console.WriteLine("4. View All Accounts");
-                    Console.WriteLine("5. Show Total Bank Balance");
-                    Console.WriteLine("6. Export All Accounts");
-                    Console.WriteLine("7. View All Complaints");
-                    Console.WriteLine("8. Back to Main Menu");
-                    Console.WriteLine("9. Process Loan Requests");
-                    Console.WriteLine("10. View Feedback Summary");
-                    Console.WriteLine("11. View Appointments"); // New option for viewing appointments
-                    Console.WriteLine("12. Unlock Locked Account");
-                    Console.WriteLine("13. Show Top 3 Richest Customers");
-                    Console.Write("Select an option: ");
+                    PrintColored("====================================", ConsoleColor.DarkBlue);
+                    PrintColored("           🔐 Admin Menu            ", ConsoleColor.White);
+                    PrintColored("====================================", ConsoleColor.DarkBlue);
+                    PrintColored("1. Process Account Requests", ConsoleColor.Green);
+                    PrintColored("2. Search Account by Name/National ID", ConsoleColor.Green);
+                    PrintColored("3. Delete Account", ConsoleColor.Red);
+                    PrintColored("4. View All Accounts", ConsoleColor.Yellow);
+                    PrintColored("5. Show Total Bank Balance", ConsoleColor.Yellow);
+                    PrintColored("6. Export All Accounts", ConsoleColor.Yellow);
+                    PrintColored("7. View All Complaints", ConsoleColor.Magenta);
+                    PrintColored("8. Back to Main Menu", ConsoleColor.Cyan);
+                    PrintColored("9. Process Loan Requests", ConsoleColor.DarkGreen);
+                    PrintColored("10. View Feedback Summary", ConsoleColor.DarkGreen);
+                    PrintColored("11. View Appointments", ConsoleColor.DarkCyan);
+                    PrintColored("12. Unlock Locked Account", ConsoleColor.DarkRed);
+                    PrintColored("13. Show Top 3 Richest Customers", ConsoleColor.DarkYellow);
+                    PrintColored("------------------------------------", ConsoleColor.DarkGray);
+                    Console.Write("Select an option (1-13): ");
                     string choice = Console.ReadLine();
 
                     switch (choice)
@@ -135,10 +189,20 @@ namespace MiniBankSystemProject
                         case "1": ProcessCreateBankAccountRequest(); break;
                         case "2": SearchAccount(); break;
                         case "3": DeleteAccount(); break;
-                        case "4": ViewAllAccounts(); break;
-                        case "5": ShowTotalBankBalance(); break;
+                        case "4":
+                            Console.WriteLine($"DEBUG: Loaded Accounts = {names.Count}");
+                            
+                            ViewAllAccounts();
+                            Console.WriteLine("Press Any Key to continue...");
+                            Console.ReadKey();
+                            break;
+                        case "5": ShowTotalBankBalance();
+                            Console.WriteLine("Press Any Key to continue...");
+                            Console.ReadKey(); break;
                         case "6": ExportAccounts(); break;
-                        case "7": ViewAllComplaints(); break;
+                        case "7": ViewAllComplaints(); 
+                            Console.WriteLine("Press Any Key to continue...");
+                            Console.ReadKey(); break;
                         case "8": WelcomeMenu(); break;
                         case "9":
                             ProcessLoanRequests();
@@ -173,26 +237,38 @@ namespace MiniBankSystemProject
         // Display the user menu and prompt user for selection
         public static void UserMenu()
         {
-            // handle any exceptions that may occur during the user menu
             try
             {
                 bool flag = true;
                 while (flag)
                 {
-                    Console.Clear();
-                    Console.WriteLine("\n--- User Menu ---");
-                    Console.WriteLine("1. Create Account Request");
-                    Console.WriteLine("2. Login");
-                    Console.WriteLine("3. Back to Main Menu");
-                    Console.Write("Select an option: ");
+                    string[] options = new string[]
+                    {
+                "1. Create Account Request",
+                "2. Login",
+                "3. Back to Main Menu"
+                    };
+
+                    PrintBoxedMenu("👤 User Menu", options);
+
+                    Console.Write("\nSelect an option (1-3): ");
                     string choice = Console.ReadLine();
 
                     switch (choice)
                     {
-                        case "1": RequestCreateBankAccount(); break;
-                        case "2": LoginUserAccount(); break;
-                        case "3": WelcomeMenu(); break;
-                        default: Console.WriteLine("Invalid choice."); UserMenu(); flag = false; break;
+                        case "1":
+                            RequestCreateBankAccount();
+                            break;
+                        case "2":
+                            LoginUserAccount();
+                            break;
+                        case "3":
+                            WelcomeMenu();
+                            return; // exit current loop
+                        default:
+                            Console.WriteLine("Invalid choice.");
+                            Console.ReadKey();
+                            break;
                     }
                 }
             }
@@ -200,9 +276,11 @@ namespace MiniBankSystemProject
             {
                 Console.WriteLine($"Error in User Menu: {ex.Message}");
             }
-            Console.WriteLine("Please press any key to countune");
+
+            Console.WriteLine("Please press any key to continue...");
             Console.ReadKey();
         }
+
         public static bool AdminLogin()
         {
             const string adminId = "admin";
@@ -591,20 +669,23 @@ namespace MiniBankSystemProject
             try
             {
                 Console.Clear();
-                Console.WriteLine($"\n--- Welcome {names[index]} ---");
-                Console.WriteLine("1. View Balance");
-                Console.WriteLine("2. Deposit");
-                Console.WriteLine("3. Withdraw");
-                Console.WriteLine("4. Transfer");
-                Console.WriteLine("5. Generate Monthly Statement");
-                Console.WriteLine("6. Request Loan");
-                Console.WriteLine("7. Filter My Transactions");
-                Console.WriteLine("8. Book Appointment");
-                Console.WriteLine("9. Submit Complaint");
-                Console.WriteLine("10. Undo Last Complaint");
-                Console.WriteLine("11. View Transfer History");
-                Console.WriteLine("12. Logout");
-                Console.Write("Select an option: ");
+                PrintColored("====================================", ConsoleColor.Cyan);
+                PrintColored($"🏦 Welcome, {names[index]}!", ConsoleColor.Yellow);
+                PrintColored("====================================", ConsoleColor.Cyan);
+                PrintColored("1. View Balance", ConsoleColor.Green);
+                PrintColored("2. Deposit", ConsoleColor.Green);
+                PrintColored("3. Withdraw", ConsoleColor.Green);
+                PrintColored("4. Transfer", ConsoleColor.Green);
+                PrintColored("5. Submit Complaint", ConsoleColor.Magenta);
+                PrintColored("6. Undo Last Complaint", ConsoleColor.Magenta);
+                PrintColored("7. View Transfer History", ConsoleColor.Blue);
+                PrintColored("8. Generate Monthly Statement", ConsoleColor.DarkCyan);
+                PrintColored("9. Request Loan", ConsoleColor.DarkGreen);
+                PrintColored("10. Filter My Transactions", ConsoleColor.DarkYellow);
+                PrintColored("11. Book Appointment", ConsoleColor.DarkCyan);
+                PrintColored("12. Logout", ConsoleColor.Red);
+                PrintColored("------------------------------------", ConsoleColor.DarkGray);
+                Console.Write("Select an option (1-12): ");
                 string choice = Console.ReadLine();
 
                 switch (choice)
@@ -885,11 +966,33 @@ namespace MiniBankSystemProject
         // View all accounts
         public static void ViewAllAccounts()
         {
-            for (int i = 0; i < names.Count; i++)
+            
+
+            if (names.Count == 0)
             {
-                Console.WriteLine($"{accountNumbers[i]} | {names[i]} | {balances[i]:C}");
+                Console.WriteLine("No accounts to display.");
+                Console.WriteLine("Please press any key to countune");
+                Console.ReadKey ();
+
+                return;
+            }
+
+            var allAccounts = names
+                .Select((name, i) => new
+                {
+                    AccountNumber = accountNumbers[i],
+                    Name = name,
+                    Balance = balances[i]
+                })
+                .OrderByDescending(acc => acc.Balance); // optional sorting
+
+            Console.WriteLine("--- All Accounts ---");
+            foreach (var acc in allAccounts)
+            {
+                Console.WriteLine($"{acc.AccountNumber} | {acc.Name} | {acc.Balance:C}");
             }
         }
+
         // Show the total bank balance
         public static void ShowTotalBankBalance()
         {
@@ -977,54 +1080,94 @@ namespace MiniBankSystemProject
             {
                 if (File.Exists(UserLogInFile))
                 {
-                    foreach (var line in File.ReadAllLines(UserLogInFile))
+                    
+
+                    var lines = File.ReadAllLines(UserLogInFile);
+                    foreach (var line in lines)
                     {
+                        Console.WriteLine($"Loading line: {line}");
                         var parts = line.Split('|');
-                        names.Add(parts[0]);
-                        nationalIds.Add(parts[1]);
-                        passwords.Add(parts[2]);
-                        balances.Add(double.Parse(parts[3]));
-                        accountNumbers.Add(parts[4]);
 
-                        // New additions (fail-safe fallback for old lines)
-                        if (parts.Length > 11)
+                        // Must have at least 5 parts (basic info)
+                        if (parts.Length < 5)
                         {
-                            failedLoginAttempts.Add(int.Parse(parts[5]));
-                            isLocked.Add(bool.Parse(parts[6]));
-                            loanAmounts.Add(double.Parse(parts[7]));
-                            loanInterestRates.Add(double.Parse(parts[8]));
-                            loanStatus.Add(parts[9]);
-                            hasAppointment.Add(bool.Parse(parts[10]));
-                            var scores = parts[11]
-                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                .Select(int.Parse)
-                                .ToList();
-
-                            feedbackScores.Add(scores);
+                            Console.WriteLine($"[Skipped] Invalid line: {line}");
+                            continue;
                         }
-                        else
+
+                        try
                         {
-                            failedLoginAttempts.Add(0);
-                            isLocked.Add(false);
-                            loanAmounts.Add(0);
-                            loanInterestRates.Add(0);
-                            loanStatus.Add("None");
-                            hasAppointment.Add(false);
-                            feedbackScores.Add(new List<int>());
+                            names.Add(parts[0]);
+                            nationalIds.Add(parts[1]);
+                            passwords.Add(parts[2]);
+                            balances.Add(double.Parse(parts[3]));
+                            accountNumbers.Add(parts[4]);
+
+                            // Optional fields (length > 11 expected for full details)
+                            if (parts.Length > 11)
+                            {
+                                failedLoginAttempts.Add(int.Parse(parts[5]));
+                                isLocked.Add(bool.Parse(parts[6]));
+                                loanAmounts.Add(double.Parse(parts[7]));
+                                loanInterestRates.Add(double.Parse(parts[8]));
+                                loanStatus.Add(parts[9]);
+                                hasAppointment.Add(bool.Parse(parts[10]));
+
+                                var scores = parts[11]
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                    .Select(int.Parse)
+                                    .ToList();
+
+                                feedbackScores.Add(scores);
+                            }
+                            else
+                            {
+                                // Fill defaults for missing data
+                                failedLoginAttempts.Add(0);
+                                isLocked.Add(false);
+                                loanAmounts.Add(0);
+                                loanInterestRates.Add(0);
+                                loanStatus.Add("None");
+                                hasAppointment.Add(false);
+                                feedbackScores.Add(new List<int>());
+                            }
+                        }
+                        catch (Exception exLine)
+                        {
+                            Console.WriteLine($"[Error] Parsing line failed: {line}\nReason: {exLine.Message}");
+
+                            // Rollback partial entries to keep lists consistent
+                            int rollbackIndex = names.Count - 1;
+                            if (rollbackIndex >= 0)
+                            {
+                                names.RemoveAt(rollbackIndex);
+                                nationalIds.RemoveAt(rollbackIndex);
+                                passwords.RemoveAt(rollbackIndex);
+                                balances.RemoveAt(rollbackIndex);
+                                accountNumbers.RemoveAt(rollbackIndex);
+                            }
                         }
                     }
 
+                    // Update last account number
                     if (accountNumbers.Count > 0)
                     {
                         lastAccountNumber = accountNumbers.Max(x => int.Parse(x));
                     }
+
+                    Console.WriteLine($"✔ Loaded {names.Count} accounts successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("⚠ No user login file found.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading accounts: {ex.Message}");
+                Console.WriteLine($"[Fatal Error] Loading accounts: {ex.Message}");
             }
         }
+
         public static void FilterTransactions(int index)
         {
             Console.WriteLine("\n--- Transaction Filter Menu ---");
@@ -1122,6 +1265,8 @@ namespace MiniBankSystemProject
         {
             try
             {
+                Console.WriteLine($"DEBUG: Complaints Loaded = {complaints.Count}");
+
                 if (complaints.Count == 0)
                 {
                     Console.WriteLine("No complaints available.");
@@ -1143,7 +1288,7 @@ namespace MiniBankSystemProject
                 Console.WriteLine($"Error viewing complaints: {ex.Message}");
             }
 
-            AdminMenu();
+          
         }
 
         public static void ViewTransferHistory(int index)
