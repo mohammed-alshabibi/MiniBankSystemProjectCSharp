@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Transactions;
 
 
 namespace MiniBankSystemProject
@@ -90,7 +91,37 @@ namespace MiniBankSystemProject
             Console.WriteLine(bottom);
             Console.ResetColor();
         }
+        public static void PrintUserMenu(string title, string[] options, ConsoleColor titleColor = ConsoleColor.Yellow)
+        {
+            Console.Clear();
+            int width = options.Max(o => o.Length);
+            width = Math.Max(width, title.Length);
+            width += 8; // padding
 
+            string top = $"╭{new string('─', width)}╮";
+            string bottom = $"╰{new string('─', width)}╯";
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(top);
+
+            string paddedTitle = $"│{new string(' ', (width - title.Length) / 2)}{title}{new string(' ', (width - title.Length + 1) / 2)}│";
+            Console.ForegroundColor = titleColor;
+            Console.WriteLine(paddedTitle);
+            Console.ForegroundColor = ConsoleColor.Green;
+
+            Console.WriteLine($"├{new string('─', width)}┤");
+
+            foreach (var option in options)
+            {
+                string line = $"│  {option.PadRight(width - 2)}│";
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(line);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(bottom);
+            Console.ResetColor();
+        }
         // Display the welcome menu and prompt user for selection
         public static void WelcomeMenu()
         {
@@ -165,21 +196,21 @@ namespace MiniBankSystemProject
                 {
                     Console.Clear();
                     PrintColored("====================================", ConsoleColor.DarkBlue);
-                    PrintColored("           🔐 Admin Menu            ", ConsoleColor.White);
+                    PrintColored("            Admin Menu            ", ConsoleColor.White);
                     PrintColored("====================================", ConsoleColor.DarkBlue);
                     PrintColored("1. Process Account Requests", ConsoleColor.Green);
-                    PrintColored("2. Search Account by Name/National ID", ConsoleColor.Green);
+                    PrintColored("2. Search Account by Name/National ID", ConsoleColor.White);
                     PrintColored("3. Delete Account", ConsoleColor.Red);
-                    PrintColored("4. View All Accounts", ConsoleColor.Yellow);
-                    PrintColored("5. Show Total Bank Balance", ConsoleColor.Yellow);
-                    PrintColored("6. Export All Accounts", ConsoleColor.Yellow);
-                    PrintColored("7. View All Complaints", ConsoleColor.Magenta);
-                    PrintColored("8. Back to Main Menu", ConsoleColor.Cyan);
-                    PrintColored("9. Process Loan Requests", ConsoleColor.DarkGreen);
-                    PrintColored("10. View Feedback Summary", ConsoleColor.DarkGreen);
-                    PrintColored("11. View Appointments", ConsoleColor.DarkCyan);
-                    PrintColored("12. Unlock Locked Account", ConsoleColor.DarkRed);
-                    PrintColored("13. Show Top 3 Richest Customers", ConsoleColor.DarkYellow);
+                    PrintColored("4. View All Accounts", ConsoleColor.White);
+                    PrintColored("5. Show Total Bank Balance", ConsoleColor.White);
+                    PrintColored("6. Export All Accounts", ConsoleColor.White);
+                    PrintColored("7. View All Complaints", ConsoleColor.White);
+                    PrintColored("8. Process Loan Requests", ConsoleColor.White);
+                    PrintColored("9. View Feedback Summary", ConsoleColor.White);
+                    PrintColored("10. View Appointments", ConsoleColor.White);
+                    PrintColored("12. Unlock Locked Account", ConsoleColor.White);
+                    PrintColored("12. Show Top 3 Richest Customers", ConsoleColor.White);
+                    PrintColored("13. Back to Main Menu", ConsoleColor.Red);
                     PrintColored("------------------------------------", ConsoleColor.DarkGray);
                     Console.Write("Select an option (1-13): ");
                     string choice = Console.ReadLine();
@@ -203,21 +234,24 @@ namespace MiniBankSystemProject
                         case "7": ViewAllComplaints(); 
                             Console.WriteLine("Press Any Key to continue...");
                             Console.ReadKey(); break;
-                        case "8": WelcomeMenu(); break;
-                        case "9":
+                        
+                        case "8":
                             ProcessLoanRequests();
                             break;
-                        case "10":
+                        case "9":
                             ViewFeedbackSummary();
                             break;
-                        case "11":
+                        case "10":
                             ViewAppointments();
                             break;
-                        case "12":
+                        case "11":
                             UnlockAccount();
                             break;
+                        case "12":
+                            ShowTop3RichestCustomers(); 
+                            break;
                         case "13":
-                            ShowTop3RichestCustomers();
+                            WelcomeMenu();
                             break;
 
                         default: Console.WriteLine("Invalid choice."); AdminMenu(); exit = false; break;
@@ -249,7 +283,7 @@ namespace MiniBankSystemProject
                 "3. Back to Main Menu"
                     };
 
-                    PrintBoxedMenu("👤 User Menu", options);
+                    PrintUserMenu("👤 User Menu", options);
 
                     Console.Write("\nSelect an option (1-3): ");
                     string choice = Console.ReadLine();
@@ -279,6 +313,159 @@ namespace MiniBankSystemProject
 
             Console.WriteLine("Please press any key to continue...");
             Console.ReadKey();
+        }
+        // Display the user bank menu and prompt user for selection
+        public static void UserBankMenu(int index)
+        {
+            try
+            {
+                Console.Clear();
+                PrintColored("====================================", ConsoleColor.Cyan);
+                PrintColored($" Welcome, {names[index]}!", ConsoleColor.Yellow);
+                PrintColored("====================================", ConsoleColor.Cyan);
+                PrintColored("1. View Balance", ConsoleColor.White);
+                PrintColored("2. Deposit", ConsoleColor.White);
+                PrintColored("3. Withdraw", ConsoleColor.White);
+                PrintColored("4. Transfer", ConsoleColor.White);
+                PrintColored("5. Generate Monthly Statement", ConsoleColor.White);
+                PrintColored("6. Request Loan", ConsoleColor.White);
+                PrintColored("7. Filter My Transactions", ConsoleColor.White);
+                PrintColored("8. Book Appointment", ConsoleColor.White);
+                PrintColored("9. Submit Complaint", ConsoleColor.White);
+                PrintColored("10. Undo Last Complaint", ConsoleColor.White);
+                PrintColored("11. View Transfer History", ConsoleColor.White);
+                PrintColored("12. Logout", ConsoleColor.Red);
+                PrintColored("------------------------------------", ConsoleColor.DarkGray);
+                Console.Write("Select an option (1-12): ");
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        Console.WriteLine($"Your balance is {balances[index]:C}");
+                        break;
+
+                    case "2":
+                        Console.WriteLine("Select currency for deposit:");
+                        Console.WriteLine("1. OMR (default)");
+                        Console.WriteLine("2. USD");
+                        Console.WriteLine("3. EUR");
+                        Console.Write("Choice: ");
+                        string currencyChoice = Console.ReadLine();
+
+                        Console.Write("Enter deposit amount: ");
+                        if (!double.TryParse(Console.ReadLine(), out double originalAmount) || originalAmount <= 0)
+                        {
+                            PrintColored("Invalid amount.", ConsoleColor.Red);
+                            break;
+                        }
+
+                        // Exchange rates (approx)
+                        double USD_TO_OMR = 0.385;
+                        double EUR_TO_OMR = 0.41;
+
+                        double convertedAmount = originalAmount;
+                        string currencyUsed = "OMR";
+
+                        switch (currencyChoice)
+                        {
+                            case "2":
+                                currencyUsed = "USD";
+                                convertedAmount = originalAmount * USD_TO_OMR;
+                                break;
+                            case "3":
+                                currencyUsed = "EUR";
+                                convertedAmount = originalAmount * EUR_TO_OMR;
+                                break;
+                        }
+
+                        balances[index] += convertedAmount;
+                        string transaction = $"Deposit ({currencyUsed})|{originalAmount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}|Converted: {convertedAmount:F2} OMR";
+                        allTransactions[index].Add(transaction);
+                        PrintReceipt("Deposit", index, convertedAmount, "OMR");
+                        AskForFeedback(index);
+                        break;
+
+                    case "3":
+                        Console.Write("Enter withdraw amount: ");
+                        if (double.TryParse(Console.ReadLine(), out double withdraw) && balances[index] >= withdraw)
+                        {
+                            balances[index] -= withdraw;
+                            string withdrawTransaction = $"Withdraw|{withdraw}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
+                            allTransactions[index].Add(withdrawTransaction);
+                            PrintReceipt("Withdraw", index, withdraw);
+                            AskForFeedback(index);
+                        }
+                        else
+                        {
+                            PrintColored("Insufficient funds.", ConsoleColor.Yellow);
+                        }
+                        break;
+
+                    case "4":
+                        Console.Write("Enter recipient account number: ");
+                        string recipient = Console.ReadLine();
+                        int receiverIndex = accountNumbers.IndexOf(recipient);
+                        if (receiverIndex != -1)
+                        {
+                            Console.Write("Enter amount to transfer: ");
+                            if (double.TryParse(Console.ReadLine(), out double amount) && balances[index] >= amount)
+                            {
+                                balances[index] -= amount;
+                                balances[receiverIndex] += amount;
+                                string outTx = $"TransferTo:{accountNumbers[receiverIndex]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
+                                string inTx = $"TransferFrom:{accountNumbers[index]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[receiverIndex]}";
+                                allTransactions[index].Add(outTx);
+                                allTransactions[receiverIndex].Add(inTx);
+                                // Save to transfer history
+                                RecordTransfer(accountNumbers[index], accountNumbers[receiverIndex], amount);
+                                SaveTransferHistory();
+                                PrintColored("Transfer successful.", ConsoleColor.Green);
+                                AskForFeedback(index);
+                            }
+                            else PrintColored("Invalid amount or insufficient funds.", ConsoleColor.Red);
+                        }
+                        else PrintColored("Recipient not found.", ConsoleColor.Yellow);
+                        break;
+
+                    case "5":
+                        GenerateMonthlyStatement(index);
+                        break;
+                    case "6":
+                        RequestLoan(index);
+                        break;
+                    case "7":
+                        FilterTransactions(index);
+                        break;
+                    case "8":
+                        BookAppointment(index);
+                        break;
+                    case "9":
+                        SubmitComplaint(index);
+                        break;
+                    case "10":
+                        UndoLastComplaint(index);
+                        break;
+                    case "11":
+                        ViewTransferHistory(index);
+                        break;
+
+                    case "12":
+                        WelcomeMenu();
+                        return;
+                    default:
+                        PrintColored("Invalid option.", ConsoleColor.Red);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UserBankMenu: {ex.Message}");
+            }
+
+            Console.WriteLine("Press any key to return to menu...");
+            Console.ReadKey();
+            UserBankMenu(index);
         }
 
         public static bool AdminLogin()
@@ -322,7 +509,8 @@ namespace MiniBankSystemProject
             feedbackScores.Add(new List<int>());
             allTransactions.Add(new List<string>());
             hasAppointment.Add(false);
-            Console.WriteLine($"Account created! Account Number: {lastAccountNumber}");
+            Console.WriteLine();
+            PrintColored($"Account created! Account Number: {lastAccountNumber}", ConsoleColor.Green);
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
             UserMenu();
@@ -593,17 +781,52 @@ namespace MiniBankSystemProject
         {
             if (createAccountRequests.Count == 0)
             {
-                Console.WriteLine("No requests to process.");
-                Console.WriteLine("Please press any key to countune");
+               
+                PrintColored("No requests to process.", ConsoleColor.Red);
+                Console.WriteLine("Please press any key to continue...");
                 Console.ReadKey();
                 AdminMenu();
-               
+                return;
             }
 
             string request = createAccountRequests.Dequeue();
             var parts = request.Split('|');
-            CreateAccount(parts[0], parts[1], parts[2], double.Parse(parts[3]));
+
+            string name = parts[0];
+            string nationalId = parts[1];
+            string password = parts[2];
+            double balance = double.Parse(parts[3]);
+
+            Console.WriteLine("\n--- Account Creation Request ---");
+            Console.WriteLine($"Name       : {name}");
+            Console.WriteLine($"National ID: {nationalId}");
+            Console.WriteLine($"Balance    : {balance:C}");
+            Console.Write("\nApprove this request? (y/n): ");
+            string choice = Console.ReadLine().ToLower();
+
+            if (choice == "y")
+            {
+                CreateAccount(name, nationalId, password, balance);
+                
+                PrintColored("Account request approved and created.", ConsoleColor.Green);
+                
+            }
+            else
+            {
+                
+                PrintColored("Account request rejected.", ConsoleColor.Red);
+            }
+
+            Console.WriteLine("Press any key to process the next request or return...");
+            Console.ReadKey();
+
+            // Loop back if more requests remain
+            if (createAccountRequests.Count > 0)
+                ProcessCreateBankAccountRequest();
+            else
+                AdminMenu();
         }
+
         // Login to an existing user account
         public static void LoginUserAccount()
         {
@@ -613,14 +836,16 @@ namespace MiniBankSystemProject
             int index = nationalIds.IndexOf(nationalId);
             if (index == -1)
             {
-                Console.WriteLine("Account not found.");
+                
+                PrintColored("Account not found.", ConsoleColor.Red);
                 Console.ReadKey();
                 return;
             }
 
             if (isLocked[index])
             {
-                Console.WriteLine("Account is locked. Contact admin.");
+                
+                PrintColored("Account is locked. Contact admin.", ConsoleColor.Red);
                 Console.ReadKey();
                 return;
             }
@@ -636,7 +861,8 @@ namespace MiniBankSystemProject
 
                 if (passwords[index] == hashedInput)
                 {
-                    Console.WriteLine("Login successful!");
+                    PrintColored("Login successful!", ConsoleColor.Green);
+                   
                     failedLoginAttempts[index] = 0;
                     UserBankMenu(index);
                     return;
@@ -651,7 +877,7 @@ namespace MiniBankSystemProject
                     if (failedLoginAttempts[index] >= 3)
                     {
                         isLocked[index] = true;
-                        Console.WriteLine("Account locked due to 3 failed login attempts.");
+                        PrintColored("Account locked due to 3 failed login attempts.", ConsoleColor.Red);
                         SaveAccounts();
                         Console.ReadKey();
                         return;
@@ -659,164 +885,11 @@ namespace MiniBankSystemProject
                 }
             }
 
-            Console.WriteLine("Too many incorrect password attempts.");
+            PrintColored("Too many incorrect password attempts.", ConsoleColor.Red);
             Console.ReadKey();
         }
 
-        // Display the user bank menu and prompt user for selection
-        public static void UserBankMenu(int index)
-        {
-            try
-            {
-                Console.Clear();
-                PrintColored("====================================", ConsoleColor.Cyan);
-                PrintColored($"🏦 Welcome, {names[index]}!", ConsoleColor.Yellow);
-                PrintColored("====================================", ConsoleColor.Cyan);
-                PrintColored("1. View Balance", ConsoleColor.Green);
-                PrintColored("2. Deposit", ConsoleColor.Green);
-                PrintColored("3. Withdraw", ConsoleColor.Green);
-                PrintColored("4. Transfer", ConsoleColor.Green);
-                PrintColored("5. Submit Complaint", ConsoleColor.Magenta);
-                PrintColored("6. Undo Last Complaint", ConsoleColor.Magenta);
-                PrintColored("7. View Transfer History", ConsoleColor.Blue);
-                PrintColored("8. Generate Monthly Statement", ConsoleColor.DarkCyan);
-                PrintColored("9. Request Loan", ConsoleColor.DarkGreen);
-                PrintColored("10. Filter My Transactions", ConsoleColor.DarkYellow);
-                PrintColored("11. Book Appointment", ConsoleColor.DarkCyan);
-                PrintColored("12. Logout", ConsoleColor.Red);
-                PrintColored("------------------------------------", ConsoleColor.DarkGray);
-                Console.Write("Select an option (1-12): ");
-                string choice = Console.ReadLine();
-
-                switch (choice)
-                {
-                    case "1":
-                        Console.WriteLine($"Your balance is {balances[index]:C}");
-                        break;
-
-                    case "2":
-                        Console.WriteLine("Select currency for deposit:");
-                        Console.WriteLine("1. OMR (default)");
-                        Console.WriteLine("2. USD");
-                        Console.WriteLine("3. EUR");
-                        Console.Write("Choice: ");
-                        string currencyChoice = Console.ReadLine();
-
-                        Console.Write("Enter deposit amount: ");
-                        if (!double.TryParse(Console.ReadLine(), out double originalAmount) || originalAmount <= 0)
-                        {
-                            Console.WriteLine("Invalid amount.");
-                            break;
-                        }
-
-                        // Exchange rates (approx)
-                        double USD_TO_OMR = 0.385;
-                        double EUR_TO_OMR = 0.41;
-
-                        double convertedAmount = originalAmount;
-                        string currencyUsed = "OMR";
-
-                        switch (currencyChoice)
-                        {
-                            case "2":
-                                currencyUsed = "USD";
-                                convertedAmount = originalAmount * USD_TO_OMR;
-                                break;
-                            case "3":
-                                currencyUsed = "EUR";
-                                convertedAmount = originalAmount * EUR_TO_OMR;
-                                break;
-                        }
-
-                        balances[index] += convertedAmount;
-                        string transaction = $"Deposit ({currencyUsed})|{originalAmount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}|Converted: {convertedAmount:F2} OMR";
-                        allTransactions[index].Add(transaction);
-                        PrintReceipt("Deposit", index, convertedAmount, "OMR");
-                        AskForFeedback(index);
-                        break;
-
-                    case "3":
-                        Console.Write("Enter withdraw amount: ");
-                        if (double.TryParse(Console.ReadLine(), out double withdraw) && balances[index] >= withdraw)
-                        {
-                            balances[index] -= withdraw;
-                            string withdrawTransaction = $"Withdraw|{withdraw}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
-                            allTransactions[index].Add(withdrawTransaction);
-                            PrintReceipt("Withdraw", index, withdraw);
-                            AskForFeedback(index);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Insufficient funds.");
-                        }
-                        break;
-
-                    case "4":
-                        Console.Write("Enter recipient account number: ");
-                        string recipient = Console.ReadLine();
-                        int receiverIndex = accountNumbers.IndexOf(recipient);
-                        if (receiverIndex != -1)
-                        {
-                            Console.Write("Enter amount to transfer: ");
-                            if (double.TryParse(Console.ReadLine(), out double amount) && balances[index] >= amount)
-                            {
-                                balances[index] -= amount;
-                                balances[receiverIndex] += amount;
-                                string outTx = $"TransferTo:{accountNumbers[receiverIndex]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[index]}";
-                                string inTx = $"TransferFrom:{accountNumbers[index]}|{amount}|{DateTime.Now:yyyy-MM-dd HH:mm}|{balances[receiverIndex]}";
-                                allTransactions[index].Add(outTx);
-                                allTransactions[receiverIndex].Add(inTx);
-                                // Save to transfer history
-                                RecordTransfer(accountNumbers[index], accountNumbers[receiverIndex], amount);
-                                SaveTransferHistory();
-                                Console.WriteLine("Transfer successful.");
-                                AskForFeedback(index);
-                            }
-                            else Console.WriteLine("Invalid amount or insufficient funds.");
-                        }
-                        else Console.WriteLine("Recipient not found.");
-                        break;
-
-                    case "5":
-                        GenerateMonthlyStatement(index);
-                        break;
-                    case "6":
-                        RequestLoan(index);
-                        break;
-                    case "7":
-                        FilterTransactions(index);
-                        break;
-                    case "8":
-                        BookAppointment(index);
-                        break;
-                    case "9":
-                        SubmitComplaint(index);
-                        break;
-                    case "10":
-                        UndoLastComplaint(index);
-                        break;
-                    case "11":
-                        ViewTransferHistory(index);
-                        break;
-                   
-                    case "12":
-                        WelcomeMenu();
-                        return;
-                    default:
-                        Console.WriteLine("Invalid option.");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in UserBankMenu: {ex.Message}");
-            }
-
-            Console.WriteLine("Press any key to return to menu...");
-            Console.ReadKey();
-            UserBankMenu(index);
-        }
-
+       
         public static void GenerateMonthlyStatement(int index)
         {
             Console.Write("Enter month (1–12): ");
@@ -831,7 +904,7 @@ namespace MiniBankSystemProject
 
             if (filtered.Count == 0)
             {
-                Console.WriteLine("No transactions found for that period.");
+                PrintColored("No transactions found for that period.", ConsoleColor.Yellow);
                 return;
             }
 
@@ -955,10 +1028,11 @@ namespace MiniBankSystemProject
                 passwords.RemoveAt(index);
                 balances.RemoveAt(index);
                 accountNumbers.RemoveAt(index);
-                Console.WriteLine("Account deleted.");
+                PrintColored("Account deleted.", ConsoleColor.Red);
+                
             }
             else
-                Console.WriteLine("Account not found.");
+                PrintColored("Account not found.", ConsoleColor.Yellow);
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
             AdminMenu();
@@ -970,7 +1044,7 @@ namespace MiniBankSystemProject
 
             if (names.Count == 0)
             {
-                Console.WriteLine("No accounts to display.");
+                PrintColored("No accounts to display.", ConsoleColor.Yellow);
                 Console.WriteLine("Please press any key to countune");
                 Console.ReadKey ();
 
@@ -1008,7 +1082,7 @@ namespace MiniBankSystemProject
                 for (int i = 0; i < names.Count; i++)
                     sw.WriteLine($"{accountNumbers[i]},{names[i]},{nationalIds[i]},{balances[i]}");
             }
-            Console.WriteLine("Exported successfully.");
+            PrintColored("Exported successfully.", ConsoleColor.Green);
             Console.WriteLine("Please press any key to countune");
             Console.ReadKey();
             AdminMenu();
